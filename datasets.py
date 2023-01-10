@@ -29,16 +29,7 @@ class ExperimentDataset(Dataset):
 def get_unsw_nb15(is_binary=True):
     file_dir = "./data/unsw-nb15/raw/data_set"
     assert os.path.isdir(file_dir), "There is no datasets"
-    all_csv_list = os.listdir(file_dir)
-    all_data = None
-    for csv_file in all_csv_list:
-        # cols = list(pd.read_csv(os.path.join(file_dir, csv_file), nrows=1, header=None))
-        data = pd.read_csv(os.path.join(file_dir, csv_file), header=None)
-        if csv_file == all_csv_list[0]:
-            all_data = data
-        else:
-            all_data = pd.concat([all_data, data], ignore_index=True)
-
+    all_data = _read_all_csv(file_dir)
     if is_binary:
         del all_data[47]
     else:
@@ -71,10 +62,10 @@ def get_unsw_nb15(is_binary=True):
     all_data[13].replace(value_map, inplace=True)
     all_data[13] = all_data[13].astype(int)
 
-    all_data[2].replace(ip_addresses_convert_nums(all_data[2].unique()), inplace=True)
+    all_data[2].replace(_ip_addresses_convert_nums(all_data[2].unique()), inplace=True)
     all_data[2] = all_data[2].astype(int)
 
-    all_data[0].replace(ip_addresses_convert_nums(all_data[0].unique()), inplace=True)
+    all_data[0].replace(_ip_addresses_convert_nums(all_data[0].unique()), inplace=True)
     all_data[0] = all_data[0].astype(int)
 
     all_data[37] = all_data[37].fillna(37)
@@ -87,7 +78,18 @@ def get_unsw_nb15(is_binary=True):
     return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
 
 
-def ip_addresses_convert_nums(ips):
+def get_n_baiot(is_binary=True):
+    file_dir = "./data/n-baiot/raw/data_set"
+    assert os.path.isdir(file_dir), "There is no datasets"
+    all_data = _read_all_csv(file_dir)
+    label = all_data.iloc[:, -1]
+    text = all_data.iloc[:, :-1]
+    # print(all_data.info())
+    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+
+
+
+def _ip_addresses_convert_nums(ips):
     result = dict()
     for pnt in range(len(ips)):
         x = ips[pnt]
@@ -96,3 +98,15 @@ def ip_addresses_convert_nums(ips):
         z = (int(parts[0]) << 24) + (int(parts[1]) << 16) + (int(parts[2]) << 8) + int(parts[3])
         result[x] = z
     return result
+
+
+def _read_all_csv(file_dir):
+    all_csv_list = os.listdir(file_dir)
+    all_data = None
+    for csv_file in all_csv_list:
+        data = pd.read_csv(os.path.join(file_dir, csv_file), header=None)
+        if csv_file == all_csv_list[0]:
+            all_data = data
+        else:
+            all_data = pd.concat([all_data, data], ignore_index=True)
+    return all_data

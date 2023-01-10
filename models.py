@@ -7,15 +7,13 @@ import torch.nn.functional as F
 
 
 class ExperimentBinaryModule(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, hidden_neurons_num):
         super(ExperimentBinaryModule, self).__init__()
-        self.linear_1 = nn.Linear(input_dim, 64)
-        self.linear_2 = nn.Linear(64, 1)
-        # self.linear_3 = nn.Linear(64, 1)
+        self.linear_1 = nn.Linear(input_dim, hidden_neurons_num)
+        self.linear_2 = nn.Linear(hidden_neurons_num, 1)
 
     def forward(self, x):
         temp = F.relu(self.linear_1(x))
-        # temp = F.relu(self.linear_2(temp))
         return self.linear_2(temp)
 
 
@@ -33,7 +31,6 @@ class ExperimentMultiCategoryModule(nn.Module):
         temp = F.relu(self.linear_2(temp))
         temp = self.linear_3(temp)
         return temp
-
 
 # class LinearLayer(nn.Module):
 #     def __init__(self, input_dimension, num_classes, bias=True):

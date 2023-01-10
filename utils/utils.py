@@ -16,6 +16,8 @@ from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 
+from .plots import HIDDEN_NEURON_NUM
+
 
 def get_data_dir(experiment_name):
     """
@@ -31,6 +33,7 @@ def get_data_dir(experiment_name):
 
 
 def get_learner(
+        name,
         device,
         optimizer_name,
         scheduler_name,
@@ -45,7 +48,7 @@ def get_learner(
     constructs the learner corresponding to an experiment for a given seed
 
     :param name: name of the experiment to be used; possible are
-                 {`synthetic`, `cifar10`, `emnist`, `shakespeare`}
+                 {'n-baiot'，'unsw-nb15'}
     :param device: used device; possible `cpu` and `cuda`
     :param optimizer_name: passed as argument to utils.optim.get_optimizer
     :param scheduler_name: passed as argument to utils.optim.get_lr_scheduler
@@ -109,15 +112,19 @@ def get_learner(
     # else:
     #     raise NotImplementedError
 
-    is_binary = output_dim == 1
-    if is_binary:
-        model = ExperimentBinaryModule(input_dim).to(device)
-        criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
-        metric = binary_accuracy
-    else:
-        model = ExperimentMultiCategoryModule(input_dim, output_dim).to(device)
-        criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-        metric = accuracy
+    # is_binary = output_dim == 1
+    # if is_binary:
+    #     model = ExperimentBinaryModule(input_dim).to(device)
+    #     criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
+    #     metric = binary_accuracy
+    # else:
+    #     model = ExperimentMultiCategoryModule(input_dim, output_dim).to(device)
+    #     criterion = nn.CrossEntropyLoss(reduction="none").to(device)
+    #     metric = accuracy
+
+    model = ExperimentBinaryModule(input_dim, HIDDEN_NEURON_NUM[name]).to(device)
+    criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
+    metric = binary_accuracy
 
     optimizer = \
         get_optimizer(
@@ -140,11 +147,12 @@ def get_learner(
         device=device,
         optimizer=optimizer,
         lr_scheduler=lr_scheduler,
-        is_binary_classification=is_binary
+        is_binary_classification=output_dim == 1
     )
 
 
 def get_learners_ensemble(
+        name,
         n_learners,
         device,
         optimizer_name,
@@ -160,6 +168,7 @@ def get_learners_ensemble(
     constructs the learner corresponding to an experiment for a given seed
 
     :param output_dim: output dimension
+    :param name: experiment name
     :param n_learners: number of learners in the ensemble
     :param device: used device; possible `cpu` and `cuda`
     :param optimizer_name: passed as argument to utils.optim.get_optimizer
@@ -174,6 +183,7 @@ def get_learners_ensemble(
     """
     learners = [
         get_learner(
+            name=name,
             device=device,
             optimizer_name=optimizer_name,
             scheduler_name=scheduler_name,
@@ -193,8 +203,10 @@ def get_learners_ensemble(
 def get_loaders(type_, root_path, batch_size, is_validation, is_binary=True):
     if type_ == "unsw-nb15":
         inputs, targets = get_unsw_nb15(is_binary)
+    elif type_ == "n-baiot":
+        inputs, targets = get_n_baiot(is_binary)
     else:
-        inputs, targets = None, None
+        raise NotImplementedError
 
     train_iterators, val_iterators, test_iterators = [], [], []
 

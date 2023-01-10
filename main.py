@@ -1,4 +1,4 @@
-from utils.plots import make_plot
+from utils.plots import make_plot, INPUT_DIM
 from utils.utils import *
 from utils.constants import *
 from utils.args import *
@@ -34,12 +34,13 @@ def init_clients(args_, root_path, logs_dir):
 
         learners_ensemble = \
             get_learners_ensemble(
+                name=args_.experiment,
                 n_learners=args_.n_learners,
                 device=args_.device,
                 optimizer_name=args_.optimizer,
                 scheduler_name=args_.lr_scheduler,
                 initial_lr=args_.lr,
-                input_dim=args_.input_dimension,
+                input_dim=INPUT_DIM[args_.experiment],
                 output_dim=args_.output_dimension,
                 n_rounds=args_.n_rounds,
                 seed=args_.seed,
@@ -93,12 +94,13 @@ def run_experiment(args_):
 
     global_learners_ensemble = \
         get_learners_ensemble(
+            name=args_.experiment,
             n_learners=args_.n_learners,
             device=args_.device,
             optimizer_name=args_.optimizer,
             scheduler_name=args_.lr_scheduler,
             initial_lr=args_.lr,
-            input_dim=args_.input_dimension,
+            input_dim=INPUT_DIM[args_.experiment],
             output_dim=args_.output_dimension,
             n_rounds=args_.n_rounds,
             seed=args_.seed,

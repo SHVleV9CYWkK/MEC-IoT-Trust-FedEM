@@ -55,6 +55,17 @@ COLORS = {
     "FedProx": "tab:cyan"
 }
 
+HIDDEN_NEURON_NUM = {
+    'unsw-nb15': 64,
+    'n-baiot': 128
+}
+
+
+INPUT_DIM = {
+    'unsw-nb15': 47,
+    'n-baiot': 116
+}
+
 
 def make_plot(path_, tag_, save_path):
     """
