@@ -75,17 +75,20 @@ def get_unsw_nb15(is_binary=True):
 
     label = all_data.iloc[:, -1]
     text = all_data.iloc[:, :-1]
-    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+    text_norm = (text - text.min()) / (text.max() - text.min())
+    return torch.tensor(np.array(text_norm), dtype=torch.float32), torch.tensor(np.array(label))
 
 
 def get_n_baiot(is_binary=True):
     file_dir = "./data/n-baiot/raw/data_set"
     assert os.path.isdir(file_dir), "There is no datasets"
     all_data = _read_all_csv(file_dir)
+
     label = all_data.iloc[:, -1]
     text = all_data.iloc[:, :-1]
+    text_norm = (text - text.min()) / (text.max() - text.min())
     # print(all_data.info())
-    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+    return torch.tensor(np.array(text_norm), dtype=torch.float32), torch.tensor(np.array(label))
 
 
 

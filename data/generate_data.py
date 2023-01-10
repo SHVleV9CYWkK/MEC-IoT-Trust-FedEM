@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 from sklearn.model_selection import train_test_split
 
-from data.utils import split_dataset_by_labels, pathological_non_iid_split
+from utils import split_dataset_by_labels, pathological_non_iid_split
 
 
 def save_data(l, path_):

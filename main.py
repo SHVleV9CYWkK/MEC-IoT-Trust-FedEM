@@ -1,3 +1,5 @@
+import time
+
 from utils.plots import make_plot, INPUT_DIM
 from utils.utils import *
 from utils.constants import *
@@ -151,8 +153,12 @@ if __name__ == "__main__":
     # torch.backends.cuda.benchmark = False
     args = parse_args()
     run_experiment(args)
-    make_plot("./logs/unsw-nb15", "Train/Metric", "./")
-    make_plot("./logs/unsw-nb15", "Train/Loss", "./")
-    make_plot("./logs/unsw-nb15", "Test/Loss", "./")
-    make_plot("./logs/unsw-nb15", "Test/Metric", "./")
+
+    path = os.getcwd()+'\\'+time.strftime("%H%M-%d%m%Y", time.localtime())
+    if not os.path.exists(path):
+        os.makedirs(path)
+    make_plot("./logs/"+args.experiment, "Train/Metric", path)
+    make_plot("./logs/"+args.experiment, "Train/Loss", path)
+    make_plot("./logs/"+args.experiment, "Test/Loss", path)
+    make_plot("./logs/"+args.experiment, "Test/Metric", path)
     print("Experiment Complete")
