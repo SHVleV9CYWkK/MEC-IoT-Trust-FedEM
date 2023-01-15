@@ -35,7 +35,7 @@ def get_unsw_nb15(is_binary=True):
     else:
         del all_data[48]
         events = all_data[47].value_counts()
-        value_map: dict = dict((v, i+1) for i, v in enumerate(events.index))
+        value_map: dict = dict((v, i + 1) for i, v in enumerate(events.index))
         all_data[47].replace(value_map, inplace=True)
         all_data[47] = all_data[47].fillna(0)
         all_data[47] = all_data[47].astype(int)
@@ -63,9 +63,13 @@ def get_unsw_nb15(is_binary=True):
     all_data[13] = all_data[13].astype(int)
 
     all_data[2].replace(_ip_addresses_convert_nums(all_data[2].unique()), inplace=True)
+    # all_data[2] = (all_data[2] - 0) / 4294967295
+    # all_data[2] = all_data[2].astype(float)
     all_data[2] = all_data[2].astype(int)
 
     all_data[0].replace(_ip_addresses_convert_nums(all_data[0].unique()), inplace=True)
+    # all_data[0] = (all_data[0] - 0) / 4294967295
+    # all_data[0] = all_data[0].astype(float)
     all_data[0] = all_data[0].astype(int)
 
     all_data[37] = all_data[37].fillna(37)
@@ -75,21 +79,21 @@ def get_unsw_nb15(is_binary=True):
 
     label = all_data.iloc[:, -1]
     text = all_data.iloc[:, :-1]
-    text_norm = (text - text.min()) / (text.max() - text.min())
-    return torch.tensor(np.array(text_norm), dtype=torch.float32), torch.tensor(np.array(label))
+    # text_norm = (text - text.min()) / (text.max() - text.min())
+    # text_norm[0] = all_data[0]
+    # text_norm[2] = all_data[2]
+    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
 
 
 def get_n_baiot(is_binary=True):
     file_dir = "./data/n-baiot/raw/data_set"
     assert os.path.isdir(file_dir), "There is no datasets"
     all_data = _read_all_csv(file_dir)
-
+    del all_data[0]
     label = all_data.iloc[:, -1]
     text = all_data.iloc[:, :-1]
-    text_norm = (text - text.min()) / (text.max() - text.min())
-    # print(all_data.info())
-    return torch.tensor(np.array(text_norm), dtype=torch.float32), torch.tensor(np.array(label))
-
+    # text_norm = (text - text.min()) / (text.max() - text.min())
+    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
 
 
 def _ip_addresses_convert_nums(ips):

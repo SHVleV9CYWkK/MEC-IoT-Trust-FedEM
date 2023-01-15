@@ -63,7 +63,7 @@ HIDDEN_NEURON_NUM = {
 
 INPUT_DIM = {
     'unsw-nb15': 47,
-    'n-baiot': 116
+    'n-baiot': 115
 }
 
 
