@@ -1,16 +1,12 @@
-import time
-
-from models import *
 from datasets import *
 from learners.learner import *
 from learners.learners_ensemble import *
 from client import *
 from aggregator import *
+from models import *
 
 from .optim import *
 from .metrics import *
-from .constants import *
-from .decentralized import *
 
 from torch.utils.data import DataLoader
 
@@ -62,65 +58,6 @@ def get_learner(
 
     """
     torch.manual_seed(seed)
-
-    # if name == "synthetic":
-    #     if output_dim == 2:
-    #         criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
-    #         metric = binary_accuracy
-    #         model = LinearLayer(input_dim, 1).to(device)
-    #         is_binary_classification = True
-    #     else:
-    #         criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-    #         metric = accuracy
-    #         model = LinearLayer(input_dim, output_dim).to(device)
-    #         is_binary_classification = False
-    # elif name == "cifar10":
-    #     criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-    #     metric = accuracy
-    #     model = get_mobilenet(n_classes=10).to(device)
-    #     # model = get_resnet18(n_classes=10).to(device)
-    #     is_binary_classification = False
-    # elif name == "cifar100":
-    #     criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-    #     metric = accuracy
-    #     model = get_mobilenet(n_classes=100).to(device)
-    #     is_binary_classification = False
-    # elif name == "emnist" or name == "femnist":
-    #     criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-    #     metric = accuracy
-    #     model = FemnistCNN(num_classes=62).to(device)
-    #     is_binary_classification = False
-    # elif name == "shakespeare":
-    #     all_characters = string.printable
-    #     labels_weight = torch.ones(len(all_characters), device=device)
-    #     for character in CHARACTERS_WEIGHTS:
-    #         labels_weight[all_characters.index(character)] = CHARACTERS_WEIGHTS[character]
-    #     labels_weight = labels_weight * 8
-    #
-    #     criterion = nn.CrossEntropyLoss(reduction="none", weight=labels_weight).to(device)
-    #     metric = accuracy
-    #     model =\
-    #         NextCharacterLSTM(
-    #             input_size=SHAKESPEARE_CONFIG["input_size"],
-    #             embed_size=SHAKESPEARE_CONFIG["embed_size"],
-    #             hidden_size=SHAKESPEARE_CONFIG["hidden_size"],
-    #             output_size=SHAKESPEARE_CONFIG["output_size"],
-    #             n_layers=SHAKESPEARE_CONFIG["n_layers"]
-    #         ).to(device)
-    #     is_binary_classification = False
-    #
-    # else:
-    #     raise NotImplementedError
-
-    # is_binary = output_dim == 1
-    # if is_binary:
-    #     model = ExperimentBinaryModule(input_dim).to(device)
-    #     criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
-    #     metric = binary_accuracy
-    # else:
-    #     model = ExperimentMultiCategoryModule(input_dim, output_dim).to(device)
-    #     criterion = nn.CrossEntropyLoss(reduction="none").to(device)
-    #     metric = accuracy
 
     model = ExperimentBinaryModule(input_dim, HIDDEN_NEURON_NUM[name]).to(device)
     criterion = nn.BCEWithLogitsLoss(reduction="none").to(device)
@@ -412,87 +349,6 @@ def get_aggregator(
             global_train_logger=global_train_logger,
             global_test_logger=global_test_logger,
             test_clients=test_clients,
-            sampling_rate=sampling_rate,
-            verbose=verbose,
-            seed=seed
-        )
-    # elif aggregator_type == "personalized":
-    #     return PersonalizedAggregator(
-    #         clients=clients,
-    #         global_learners_ensemble=global_learners_ensemble,
-    #         log_freq=log_freq,
-    #         global_train_logger=global_train_logger,
-    #         global_test_logger=global_test_logger,
-    #         test_clients=test_clients,
-    #         sampling_rate=sampling_rate,
-    #         verbose=verbose,
-    #         seed=seed
-    #     )
-    # elif aggregator_type == "clustered":
-    #     return ClusteredAggregator(
-    #         clients=clients,
-    #         global_learners_ensemble=global_learners_ensemble,
-    #         log_freq=log_freq,
-    #         test_clients=test_clients,
-    #         global_train_logger=global_train_logger,
-    #         global_test_logger=global_test_logger,
-    #         sampling_rate=sampling_rate,
-    #         verbose=verbose,
-    #         seed=seed
-    #     )
-    # elif aggregator_type == "L2SGD":
-    #     return LoopLessLocalSGDAggregator(
-    #         clients=clients,
-    #         global_learners_ensemble=global_learners_ensemble,
-    #         log_freq=log_freq,
-    #         global_train_logger=global_train_logger,
-    #         global_test_logger=global_test_logger,
-    #         test_clients=test_clients,
-    #         communication_probability=communication_probability,
-    #         penalty_parameter=mu,
-    #         sampling_rate=sampling_rate,
-    #         verbose=verbose,
-    #         seed=seed
-    #     )
-    # elif aggregator_type == "AFL":
-    #     return AgnosticAggregator(
-    #         clients=clients,
-    #         global_learners_ensemble=global_learners_ensemble,
-    #         log_freq=log_freq,
-    #         test_clients=test_clients,
-    #         lr_lambda=lr_lambda,
-    #         global_train_logger=global_train_logger,
-    #         global_test_logger=global_test_logger,
-    #         sampling_rate=sampling_rate,
-    #         verbose=verbose,
-    #         seed=seed
-    #     )
-    # elif aggregator_type == "FFL":
-    #     return FFLAggregator(
-    #         clients=clients,
-    #         global_learners_ensemble=global_learners_ensemble,
-    #         log_freq=log_freq,
-    #         test_clients=test_clients,
-    #         lr=lr,
-    #         q=q,
-    #         global_train_logger=global_train_logger,
-    #         global_test_logger=global_test_logger,
-    #         sampling_rate=sampling_rate,
-    #         verbose=verbose,
-    #         seed=seed
-    #     )
-    elif aggregator_type == "decentralized":
-        n_clients = len(clients)
-        mixing_matrix = get_mixing_matrix(n=n_clients, p=0.5, seed=seed)
-
-        return DecentralizedAggregator(
-            clients=clients,
-            global_learners_ensemble=global_learners_ensemble,
-            mixing_matrix=mixing_matrix,
-            log_freq=log_freq,
-            test_clients=test_clients,
-            global_train_logger=global_train_logger,
-            global_test_logger=global_test_logger,
             sampling_rate=sampling_rate,
             verbose=verbose,
             seed=seed
