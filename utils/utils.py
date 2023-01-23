@@ -138,13 +138,7 @@ def get_learners_ensemble(
 
 
 def get_loaders(type_, root_path, batch_size, is_validation, is_binary=True):
-    if type_ == "unsw-nb15":
-        inputs, targets = get_unsw_nb15(is_binary)
-    elif type_ == "n-baiot":
-        inputs, targets = get_n_baiot(is_binary)
-    else:
-        raise NotImplementedError
-
+    inputs, targets = get_dataset(type_)
     train_iterators, val_iterators, test_iterators = [], [], []
 
     for task_id, task_dir in enumerate(tqdm(os.listdir(root_path))):
@@ -203,20 +197,6 @@ def get_loader(path, batch_size, train, inputs, targets):
 
     """
     dataset = ExperimentDataset(path, inputs, targets)
-    # if type_ == "unswnb15":
-    #     dataset = ExperimentDataset(path)
-    # # elif type_ == "cifar10":
-    # #     dataset = SubCIFAR10(path, cifar10_data=inputs, cifar10_targets=targets)
-    # # elif type_ == "cifar100":
-    # #     dataset = SubCIFAR100(path, cifar100_data=inputs, cifar100_targets=targets)
-    # # elif type_ == "emnist":
-    # #     dataset = SubEMNIST(path, emnist_data=inputs, emnist_targets=targets)
-    # # elif type_ == "femnist":
-    # #     dataset = SubFEMNIST(path)
-    # # elif type_ == "shakespeare":
-    # #     dataset = CharacterDataset(path, chunk_len=SHAKESPEARE_CONFIG["chunk_len"])
-    # else:
-    #     raise NotImplementedError(f"{type_} not recognized type;")
 
     if len(dataset) == 0:
         return

@@ -12,7 +12,7 @@ class NetworkLassoRunner:
     def __init__(self, G):
         self.G = G
 
-    def run_admm(self, lamb, rho, c, max_iterations, num_features, base_dataset_path, x, z, u, z_residuals,
+    def run_admm(self, lamb, rho, c, max_iterations, num_features, datasets, x, z, u, z_residuals,
                  u_residuals):
         pool = Pool(cpu_count() - 1)
 
@@ -31,12 +31,11 @@ class NetworkLassoRunner:
 
         iters = 0
         while iters < max_iterations and (r > epri or s > edual or iters < 1):
-            # print("Iteration: " + str(elapsed_iterations))
             start_time = t.time()
             x_data = []
             for node_id in self.G.nodes:
-                training_dataset_path = base_dataset_path + "train-" + str(node_id) + ".csv"
                 neighs = self.G[node_id]
+                local_dataset = datasets[node_id]
                 neighbour_data = np.zeros((2 * len(neighs), num_features))
                 neigh_counter = 0
                 for neighbour_id in neighs:
@@ -45,7 +44,7 @@ class NetworkLassoRunner:
                     neighbour_data[neigh_counter * 2, :] = z_val
                     neighbour_data[neigh_counter * 2 + 1, :] = u_val
                     neigh_counter += 1
-                x_data.append((node_id, rho, c, training_dataset_path, neighbour_data))
+                x_data.append((node_id, rho, c, local_dataset, neighbour_data))
             new_x = pool.map(x_update, x_data)
             x = np.array(new_x).reshape(num_nodes, num_features).T
 
@@ -105,7 +104,7 @@ class NetworkLassoRunner:
 
         return x, z, u, z_residuals, u_residuals, iters
 
-    def run(self, num_features, max_iterations, base_dataset_path, c):
+    def run(self, num_features, max_iterations, datasets, datasets_test, c):
         print("Running Network Lasso...")
 
         lamb = 0.0
@@ -137,7 +136,7 @@ class NetworkLassoRunner:
         while lamb <= threshold:
             print("Lambda: " + str(lamb) + ", Rho: " + str(rho))
             x, z, u, z_residuals, u_residuals, iters = self.run_admm(lamb, rho, c, max_iterations,
-                                                                     num_features, base_dataset_path, x, z, u,
+                                                                     num_features, datasets, x, z, u,
                                                                      z_residuals,
                                                                      u_residuals)
 
@@ -152,7 +151,7 @@ class NetworkLassoRunner:
 
             lambs.append(lamb)
 
-            accuracy = calculate_accuracy(x, num_nodes, base_dataset_path)
+            accuracy = calculate_accuracy(x, num_nodes, datasets_test)
             accuracies.append(accuracy)
 
             print("Lambda: " + str(lamb) + ", Rho: " + str(rho) + ", Iterations: " + str(iters) + ", Accuracy: " + str(

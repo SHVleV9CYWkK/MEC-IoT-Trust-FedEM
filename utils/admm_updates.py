@@ -1,6 +1,5 @@
 from cvxpy import *
 import numpy as np
-from utils.admm_utils import get_data
 from numpy import linalg as LA
 
 np.random.seed(10)
@@ -8,10 +7,10 @@ np.random.seed(10)
 def x_update(data):
     rho = data[1]
     c = data[2]
-    dataset_path = data[3]
+    dataset = data[3]
     neighbour_data = data[4]
 
-    X, y = get_data(dataset_path)
+    X, y = dataset
     dim_X = X.shape
     num_examples = dim_X[0]
     num_features = dim_X[1]

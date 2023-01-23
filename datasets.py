@@ -26,19 +26,21 @@ class ExperimentDataset(Dataset):
         return x, y, idx
 
 
-def get_unsw_nb15(is_binary=True):
+def get_dataset(dataset_name, is_tensor=True):
+    if dataset_name == "unsw-nb15":
+        inputs, targets = get_unsw_nb15(is_tensor)
+    elif dataset_name == "n-baiot":
+        inputs, targets = get_n_baiot(is_tensor)
+    else:
+        raise NotImplementedError
+    return inputs, targets
+
+
+def get_unsw_nb15(is_tensor):
     file_dir = "./data/unsw-nb15/raw/data_set"
     assert os.path.isdir(file_dir), "There is no datasets"
     all_data = _read_all_csv(file_dir)
-    if is_binary:
-        del all_data[47]
-    else:
-        del all_data[48]
-        events = all_data[47].value_counts()
-        value_map: dict = dict((v, i + 1) for i, v in enumerate(events.index))
-        all_data[47].replace(value_map, inplace=True)
-        all_data[47] = all_data[47].fillna(0)
-        all_data[47] = all_data[47].astype(int)
+    del all_data[47]
 
     all_data[1].replace({'0x000b': 11, '0x000c': 12, '-': 0}, inplace=True)
     all_data[3].replace({'0xc0a8': 49320, '-': 0, '0xcc09': 52233, '0x20205321': 538989345}, inplace=True)
@@ -63,13 +65,9 @@ def get_unsw_nb15(is_binary=True):
     all_data[13] = all_data[13].astype(int)
 
     all_data[2].replace(_ip_addresses_convert_nums(all_data[2].unique()), inplace=True)
-    # all_data[2] = (all_data[2] - 0) / 4294967295
-    # all_data[2] = all_data[2].astype(float)
     all_data[2] = all_data[2].astype(int)
 
     all_data[0].replace(_ip_addresses_convert_nums(all_data[0].unique()), inplace=True)
-    # all_data[0] = (all_data[0] - 0) / 4294967295
-    # all_data[0] = all_data[0].astype(float)
     all_data[0] = all_data[0].astype(int)
 
     all_data[37] = all_data[37].fillna(37)
@@ -77,23 +75,24 @@ def get_unsw_nb15(is_binary=True):
     all_data[37] = all_data[37].astype(int)
     all_data[38] = all_data[38].astype(int)
 
-    label = all_data.iloc[:, -1]
-    text = all_data.iloc[:, :-1]
-    # text_norm = (text - text.min()) / (text.max() - text.min())
-    # text_norm[0] = all_data[0]
-    # text_norm[2] = all_data[2]
-    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+    return _segmentation_features_and_labels(all_data)
 
 
-def get_n_baiot(is_binary=True):
+def get_n_baiot(is_tensor):
     file_dir = "./data/n-baiot/raw/data_set"
     assert os.path.isdir(file_dir), "There is no datasets"
     all_data = _read_all_csv(file_dir)
     del all_data[0]
-    label = all_data.iloc[:, -1]
-    text = all_data.iloc[:, :-1]
-    # text_norm = (text - text.min()) / (text.max() - text.min())
-    return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+    return _segmentation_features_and_labels(all_data)
+
+
+def _segmentation_features_and_labels(data, is_tensor=True):
+    label = data.iloc[:, -1]
+    text = data.iloc[:, :-1]
+    if is_tensor:
+        return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
+    else:
+        return np.array(text), np.array(label)
 
 
 def _ip_addresses_convert_nums(ips):
