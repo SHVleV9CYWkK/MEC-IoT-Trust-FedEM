@@ -46,7 +46,7 @@ def calculate_accuracy(x, num_nodes, datasets_test):
 
 
 def get_local_data(node_id, dataset_name, inputs, targets, is_test=False):
-    dataset_name = "./data/" + dataset_name + "/all_data/train/task_" + node_id
+    dataset_name = "./data/" + dataset_name + "/all_data/train/task_" + str(node_id)
     if is_test:
         path = os.path.join(dataset_name, f"test.pkl")
     else:

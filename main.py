@@ -8,6 +8,7 @@ from utils.plots import make_plot, INPUT_DIM
 from utils.utils import *
 from utils.constants import *
 from utils.args import *
+from datasets import *
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -149,7 +150,7 @@ def run_experiment(args_):
 
 def run_admm_experiment(args):
     c = 0.75
-    num_features = 198 + 1
+    num_features = INPUT_DIM[args.experiment]
 
     G = build_graph(100)
     runner = NetworkLassoRunner(G)
@@ -159,7 +160,8 @@ def run_admm_experiment(args):
     for node_id in range(100):
         datasets[node_id] = get_local_data(node_id, args.experiment, inputs, targets)
         datasets_test[node_id] = get_local_data(node_id, args.experiment, inputs, targets, True)
-    w, lambs, accuracies = runner.run(num_features, args.experiment, args.n_rounds, datasets, datasets_test, c)
+    w, lambs, accuracies = runner.run(num_features, args.n_rounds, datasets, datasets_test, c)
+    return w, lambs, accuracies
 
 
 def build_graph(num_nodes):
@@ -216,7 +218,8 @@ if __name__ == "__main__":
     if args.method != "admm":
         run_experiment(args)
     else:
-        run_admm_experiment(args)
+        reulst = run_admm_experiment(args)
+        print(reulst)
 
     path = os.getcwd() + '\\' + time.strftime("%H%M-%d%m%Y", time.localtime())
     if not os.path.exists(path):
