@@ -75,7 +75,7 @@ def get_unsw_nb15(is_tensor):
     all_data[37] = all_data[37].astype(int)
     all_data[38] = all_data[38].astype(int)
 
-    return _segmentation_features_and_labels(all_data)
+    return _segmentation_features_and_labels(all_data, is_tensor)
 
 
 def get_n_baiot(is_tensor):
@@ -83,7 +83,7 @@ def get_n_baiot(is_tensor):
     assert os.path.isdir(file_dir), "There is no datasets"
     all_data = _read_all_csv(file_dir)
     del all_data[0]
-    return _segmentation_features_and_labels(all_data)
+    return _segmentation_features_and_labels(all_data, is_tensor)
 
 
 def _segmentation_features_and_labels(data, is_tensor=True):

@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .plots import HIDDEN_NEURON_NUM
+from datasets import get_dataset
 
 
 def get_data_dir(experiment_name):
