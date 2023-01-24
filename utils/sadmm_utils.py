@@ -29,20 +29,29 @@ def calculate_consensus(z, edges):
     return cons / float(num_edges)
 
 
-def calculate_accuracy(x, num_nodes, datasets_test):
+def calculate_accuracy(x, num_nodes, datasets_test, iterate_num=None):
     total_correct_preds = 0
-    total_test_samples = 0
+    num_total_test_samples = 0
+
     for node_id in range(num_nodes):
         X_test, y_test = datasets_test[node_id]
 
-        total_test_samples += y_test.shape[0]
+        num_test_samples = y_test.shape[0]
+        num_total_test_samples += num_test_samples
+        a = np.array(x[:, node_id])
+        a = a.reshape(1, a.shape[0])
+        y_pred = np.sign(np.dot(X_test, a.T)).flatten()
 
-        a = np.array(x[:, node_id]).reshape((X_test.shape[1], 1))
-        y_pred = np.sign([np.dot(X_test, a)]).flatten()
-        correct_preds = y_test.shape[0] - int(np.sum(np.abs(y_pred - y_test)) / 2)
+        correct_preds = int(np.sum(np.abs(y_pred - y_test)) / 2)
         total_correct_preds += correct_preds
 
-    return total_correct_preds / float(total_test_samples)
+    if iterate_num is None:
+        global_correct_preds = total_correct_preds / float(num_total_test_samples)
+        print("Global Accuracy: " + str(global_correct_preds))
+        return global_correct_preds
+    else:
+        print("Iteration: " + str(iterate_num) + ", Accuracy: " +
+              str(total_correct_preds / float(num_total_test_samples)))
 
 
 def get_local_data(node_id, dataset_name, inputs, targets, is_test=False):

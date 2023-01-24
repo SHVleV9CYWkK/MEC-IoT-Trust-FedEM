@@ -1,5 +1,6 @@
 import os
 import pickle
+import sys
 
 import numpy as np
 import torch
@@ -10,8 +11,12 @@ import pandas as pd
 
 class ExperimentDataset(Dataset):
     def __init__(self, path, data, targets):
-        with open(path, "rb") as f:
-            self.indices = pickle.load(f)
+        try:
+            with open(path, "rb") as f:
+                self.indices = pickle.load(f)
+        except FileNotFoundError:
+            print("There are not client datasets")
+            sys.exit(1)
 
         self.data, self.targets = data, targets
         self.data = self.data[self.indices]

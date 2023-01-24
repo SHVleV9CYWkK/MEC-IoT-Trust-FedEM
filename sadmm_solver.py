@@ -2,8 +2,8 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 import math
 from numpy import linalg as LA
-from utils.admm_updates import x_update, z_update, u_update
-from utils.admm_utils import get_value, calculate_accuracy
+from utils.sadmm_updates import z_update, u_update, stochastic_x_update
+from utils.sadmm_utils import get_value, calculate_accuracy
 import time as t
 
 
@@ -12,7 +12,7 @@ class NetworkLassoRunner:
     def __init__(self, G):
         self.G = G
 
-    def run_admm(self, lamb, rho, c, max_iterations, num_features, datasets, x, z, u, z_residuals,
+    def run_admm(self, lamb, rho, c, max_iterations, num_features, datasets, datasets_test, x, z, u, z_residuals,
                  u_residuals):
         pool = Pool(cpu_count() - 1)
 
@@ -29,9 +29,11 @@ class NetworkLassoRunner:
             A[counter * 2 + 1, edge[1]] = 1
             counter += 1
 
-        iters = 0
-        while iters < max_iterations and (r > epri or s > edual or iters < 1):
+        elapsed_iterations = 0
+        while elapsed_iterations < max_iterations and (r > epri or s > edual or elapsed_iterations < 1):
             start_time = t.time()
+            mu = 1 / float(elapsed_iterations + 1)
+
             x_data = []
             for node_id in self.G.nodes:
                 neighs = self.G[node_id]
@@ -44,8 +46,8 @@ class NetworkLassoRunner:
                     neighbour_data[neigh_counter * 2, :] = z_val
                     neighbour_data[neigh_counter * 2 + 1, :] = u_val
                     neigh_counter += 1
-                x_data.append((node_id, rho, c, local_dataset, neighbour_data))
-            new_x = pool.map(x_update, x_data)
+                x_data.append((node_id, rho, c, local_dataset, neighbour_data, x[:, node_id], mu))
+            new_x = pool.map(stochastic_x_update, x_data)
             x = np.array(new_x).reshape(num_nodes, num_features).T
 
             edge_data = []
@@ -95,17 +97,18 @@ class NetworkLassoRunner:
             edual = sqn * eabs + erel * LA.norm(np.dot(A.transpose(), u_residuals.transpose()), 'fro')
             r = LA.norm(np.dot(A, x.transpose()) - z_residuals.transpose(), 'fro')
             s = s
-            print("Time Iteration: " + str(iters) + ", Time: " + str(t.time() - start_time))
+            print("Time Iteration: " + str(elapsed_iterations) + ", Time: " + str(t.time() - start_time))
             print("r: " + str(r) + ", epri: " + str(epri) + " | s: " + str(s) + ", edual: " + str(edual))
 
-            iters += 1
+            calculate_accuracy(x, num_nodes, datasets_test, elapsed_iterations)
+            elapsed_iterations += 1
         pool.close()
         pool.join()
-
-        return x, z, u, z_residuals, u_residuals, iters
+        calculate_accuracy(x, num_nodes, datasets_test, elapsed_iterations)
+        return x, z, u, z_residuals, u_residuals, elapsed_iterations
 
     def run(self, num_features, max_iterations, datasets, datasets_test, c):
-        print("Running Network Lasso...")
+        print("Running Stochastic Network Lasso...")
 
         lamb = 0.0
         rho = 1.0
@@ -117,7 +120,7 @@ class NetworkLassoRunner:
         num_nodes = len(self.G.nodes)
         num_edges = len(self.G.edges)
 
-        threshold = 50
+        threshold = 10
         x = np.zeros((num_features, num_nodes))
         z = {}
         u = {}
@@ -131,12 +134,11 @@ class NetworkLassoRunner:
             u[edge] = (np.zeros((1, num_features)), np.zeros((1, num_features)))
             counter += 1
 
-        lambs = []
         accuracies = []
         while lamb <= threshold:
             print("Lambda: " + str(lamb) + ", Rho: " + str(rho))
             x, z, u, z_residuals, u_residuals, iters = self.run_admm(lamb, rho, c, max_iterations,
-                                                                     num_features, datasets, x, z, u,
+                                                                     num_features, datasets,datasets_test, x, z, u,
                                                                      z_residuals,
                                                                      u_residuals)
 
@@ -148,12 +150,6 @@ class NetworkLassoRunner:
                 lamb = lamb * multUpdateVal
             else:
                 lamb = lamb + addUpdateVal
-
-            lambs.append(lamb)
-
-            accuracy = calculate_accuracy(x, num_nodes, datasets_test)
-            accuracies.append(accuracy)
-
-            print("Lambda: " + str(lamb) + ", Rho: " + str(rho) + ", Iterations: " + str(iters) + ", Accuracy: " + str(
-                accuracy))
-        return x, lambs, accuracies
+            acc = calculate_accuracy(x, num_nodes, datasets_test)
+            accuracies.append(acc)
+        return x, accuracies
