@@ -31,7 +31,12 @@ def stochastic_x_update(data):
     X, y = dataset
     dim_X = X.shape
 
-    n = dim_X[1] - 1
+    rng = np.random.default_rng()
+    rints = rng.integers(low=0, high=dim_X[0], size=1)
+    X = X[rints[0]].reshape((1, dim_X[1]))
+    y = y[rints[0]].reshape((1, 1))
+
+    n = dim_X[1]
     a = Variable((n, 1))
     gamma = 0.1
     grad = eval_gradient_sadmm(a_prev.T, X, y)
@@ -39,8 +44,8 @@ def stochastic_x_update(data):
                 (square(norm(a - a_prev))) / (2 * mu))
     f = 0
     for id in range(int(len(neighbour_data) / 2)):
-        z = neighbour_data[id * 2].reshape((n, 1))
-        u = neighbour_data[id * 2 + 1].reshape((n, 1))
+        z = np.asmatrix(neighbour_data[id * 2]).T
+        u = np.asmatrix(neighbour_data[id * 2 + 1]).T
         f = f + rho / 2 * square(norm(a - z + u))
     objective = Minimize(50 * g + 50 * f)
     p = Problem(objective)
