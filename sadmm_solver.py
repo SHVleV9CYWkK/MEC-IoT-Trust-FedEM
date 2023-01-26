@@ -12,8 +12,8 @@ class NetworkLassoRunner:
     def __init__(self, G):
         self.G = G
 
-    def run_admm(self, lamb, rho, c, max_iterations, num_features, datasets, datasets_test, x, z, u, z_residuals,
-                 u_residuals):
+    def run_sadmm(self, lamb, rho, c, max_iterations, num_features, datasets, datasets_test, x, z, u, z_residuals,
+                  u_residuals):
         pool = Pool(cpu_count() - 1)
 
         num_edges = len(self.G.edges)
@@ -134,13 +134,12 @@ class NetworkLassoRunner:
             u[edge] = (np.zeros((1, num_features)), np.zeros((1, num_features)))
             counter += 1
 
-        accuracies = []
+        accuracies = list()
         while lamb <= threshold:
             print("Lambda: " + str(lamb) + ", Rho: " + str(rho))
-            x, z, u, z_residuals, u_residuals, iters = self.run_admm(lamb, rho, c, max_iterations,
-                                                                     num_features, datasets,datasets_test, x, z, u,
-                                                                     z_residuals,
-                                                                     u_residuals)
+            x, z, u, z_residuals, u_residuals, iters = self.run_sadmm(lamb, rho, c, max_iterations, num_features,
+                                                                      datasets, datasets_test, x, z, u, z_residuals,
+                                                                      u_residuals)
 
             lamb += 0.1
             rho += math.sqrt(lamb)

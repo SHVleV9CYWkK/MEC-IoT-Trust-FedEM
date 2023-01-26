@@ -1,10 +1,11 @@
 from cvxpy import *
 import numpy as np
 from numpy import linalg as LA
+import pandas as pd
 
 
 def eval_gradient(a_prev, x_i, y_i, gamma):
-    if y_i * np.dot(a_prev, x_i) >= 1:
+    if y_i * np.dot(a_prev, x_i.T) >= 1:
         grad = gamma * a_prev
     else:
         grad = gamma * a_prev - (y_i * x_i).T
@@ -29,19 +30,22 @@ def stochastic_x_update(data):
     mu = data[6]
 
     X, y = dataset
-    dim_X = X.shape
 
-    rng = np.random.default_rng()
-    rints = rng.integers(low=0, high=dim_X[0], size=1)
-    X = X[rints[0]].reshape((1, dim_X[1]))
-    y = y[rints[0]].reshape((1, 1))
+    df = pd.DataFrame(np.concatenate((X, y.reshape(len(y), 1)), axis=1))
+    dim_X = df.shape
 
-    n = dim_X[1]
+    sample_size = 1
+    sample = df.sample(sample_size, replace=True)
+    y_idx = sample.shape[1] - 1
+    X = np.array(sample.drop(columns=[y_idx]))
+    y = np.array(sample[y_idx]).reshape((sample_size, 1))
+
+    n = dim_X[1] - 1
     a = Variable((n, 1))
     gamma = 0.1
     grad = eval_gradient_sadmm(a_prev.T, X, y)
-    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev, a))) + (
-                (square(norm(a - a_prev))) / (2 * mu))
+    # time-varying loss function
+    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev, a))) + ((square(norm(a - a_prev))) / (2 * mu))
     f = 0
     for id in range(int(len(neighbour_data) / 2)):
         z = np.asmatrix(neighbour_data[id * 2]).T
@@ -81,7 +85,6 @@ def stochastic_x_update(data):
                     objective = Minimize(52 * g + 50 * f)
                     p = Problem(objective)
                     p.solve(verbose=False)
-
     return a.value
 
 
