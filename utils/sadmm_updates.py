@@ -14,12 +14,13 @@ def eval_gradient(a_prev, x_i, y_i, gamma):
 
 
 def eval_gradient_sadmm(a_prev, x_i, y_i):
-    if y_i * np.dot(a_prev, x_i.T) >= 1:
-        grad = 0
+    y_pred = np.array(np.dot(a_prev, x_i.T))
+    if (y_i * y_pred).any() >= 1:
+        return 0
     else:
-        grad = (-1) * (y_i * x_i).T
+        y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], )
+        return -np.sum(y_i * np.log(y_pred + 1e-3))
 
-    return grad
 
 
 def stochastic_x_update(data):
@@ -34,12 +35,12 @@ def stochastic_x_update(data):
     df = pd.DataFrame(np.concatenate((X, y.reshape(len(y), 1)), axis=1))
     dim_X = df.shape
 
-    sample_size = 1
+    sample_size = 5
     sample = df.sample(sample_size, replace=True)
     y_idx = sample.shape[1] - 1
     X = np.array(sample.drop(columns=[y_idx]))
-    y = np.array(sample[y_idx]).reshape((sample_size, 1))
-
+    y = np.array(sample[y_idx]).reshape((sample_size, ))
+    y = y.reshape(len(y), 1)
     n = dim_X[1] - 1
     a = Variable((n, 1))
     gamma = 0.1
