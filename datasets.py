@@ -1,5 +1,6 @@
 import os
 import pickle
+import sys
 
 import numpy as np
 import torch
@@ -10,8 +11,12 @@ import pandas as pd
 
 class ExperimentDataset(Dataset):
     def __init__(self, path, data, targets):
-        with open(path, "rb") as f:
-            self.indices = pickle.load(f)
+        try:
+            with open(path, "rb") as f:
+                self.indices = pickle.load(f)
+        except FileNotFoundError:
+            print("There are not client datasets")
+            sys.exit(1)
 
         self.data, self.targets = data, targets
         self.data = self.data[self.indices]
@@ -92,7 +97,10 @@ def _segmentation_features_and_labels(data, is_tensor=True):
     if is_tensor:
         return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
     else:
-        return np.array(text), np.array(label)
+        label = label.replace(1, -1)
+        label = label.replace(0, 1)
+        text_norm = (text - text.min()) / (text.max() - text.min())
+        return np.array(text_norm), np.array(label)
 
 
 def _ip_addresses_convert_nums(ips):

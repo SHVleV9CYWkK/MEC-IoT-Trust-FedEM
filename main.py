@@ -2,8 +2,8 @@ import time
 
 import networkx as nx
 
-from admm_solver import NetworkLassoRunner
-from utils.admm_utils import get_local_data
+from sadmm_solver import NetworkLassoRunner
+from utils.sadmm_utils import get_local_data
 from utils.plots import make_plot, INPUT_DIM
 from utils.utils import *
 from utils.constants import *
@@ -160,8 +160,8 @@ def run_admm_experiment(args):
     for node_id in range(100):
         datasets[node_id] = get_local_data(node_id, args.experiment, inputs, targets)
         datasets_test[node_id] = get_local_data(node_id, args.experiment, inputs, targets, True)
-    w, lambs, accuracies = runner.run(num_features, args.n_rounds, datasets, datasets_test, c)
-    return w, lambs, accuracies
+    w, accuracies = runner.run(num_features, args.n_rounds, datasets, datasets_test, c)
+    return w, accuracies
 
 
 def build_graph(num_nodes):
@@ -217,15 +217,14 @@ if __name__ == "__main__":
     args = parse_args()
     if args.method != "sadmm":
         run_experiment(args)
+        path = os.getcwd() + '\\' + time.strftime("%H%M-%d%m%Y", time.localtime())
+        if not os.path.exists(path):
+            os.makedirs(path)
+        make_plot("./logs/" + args.experiment, "Train/Metric", path)
+        make_plot("./logs/" + args.experiment, "Train/Loss", path)
+        make_plot("./logs/" + args.experiment, "Test/Loss", path)
+        make_plot("./logs/" + args.experiment, "Test/Metric", path)
     else:
-        reulst = run_admm_experiment(args)
-        print(reulst)
-
-    path = os.getcwd() + '\\' + time.strftime("%H%M-%d%m%Y", time.localtime())
-    if not os.path.exists(path):
-        os.makedirs(path)
-    make_plot("./logs/" + args.experiment, "Train/Metric", path)
-    make_plot("./logs/" + args.experiment, "Train/Loss", path)
-    make_plot("./logs/" + args.experiment, "Test/Loss", path)
-    make_plot("./logs/" + args.experiment, "Test/Metric", path)
+        result = run_admm_experiment(args)
+        print(result)
     print("Experiment Complete")

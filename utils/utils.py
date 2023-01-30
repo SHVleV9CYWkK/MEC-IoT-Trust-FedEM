@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .plots import HIDDEN_NEURON_NUM
-from datasets import get_dataset
+from datasets import *
 
 
 def get_data_dir(experiment_name):
@@ -243,27 +243,6 @@ def get_client(
             local_steps=local_steps,
             tune_locally=tune_locally
         )
-    # elif client_type == "AFL":
-    #     return AgnosticFLClient(
-    #         learners_ensemble=learners_ensemble,
-    #         train_iterator=train_iterator,
-    #         val_iterator=val_iterator,
-    #         test_iterator=test_iterator,
-    #         logger=logger,
-    #         local_steps=local_steps,
-    #         tune_locally=tune_locally
-    #     )
-    # elif client_type == "FFL":
-    #     return FFLClient(
-    #         learners_ensemble=learners_ensemble,
-    #         train_iterator=train_iterator,
-    #         val_iterator=val_iterator,
-    #         test_iterator=test_iterator,
-    #         logger=logger,
-    #         local_steps=local_steps,
-    #         tune_locally=tune_locally,
-    #         q=q
-    #     )
     else:
         return Client(
             learners_ensemble=learners_ensemble,
