@@ -155,8 +155,6 @@ def run_admm_experiment(args):
     G = build_graph(100)
     runner = NetworkLassoRunner(G)
     inputs, targets = get_dataset(args.experiment, is_tensor=False)
-    targets[targets == 1] = -1
-    targets[targets == 0] = 1
     datasets = [None] * 100
     datasets_test = [None] * 100
     for node_id in range(100):

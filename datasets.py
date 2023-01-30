@@ -97,7 +97,10 @@ def _segmentation_features_and_labels(data, is_tensor=True):
     if is_tensor:
         return torch.tensor(np.array(text), dtype=torch.float32), torch.tensor(np.array(label))
     else:
-        return np.array(text), np.array(label)
+        label = label.replace(1, -1)
+        label = label.replace(0, 1)
+        text_norm = (text - text.min()) / (text.max() - text.min())
+        return np.array(text_norm), np.array(label)
 
 
 def _ip_addresses_convert_nums(ips):

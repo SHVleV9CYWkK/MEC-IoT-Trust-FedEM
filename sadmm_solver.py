@@ -2,7 +2,7 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 import math
 from numpy import linalg as LA
-from utils.sadmm_updates import z_update, u_update, stochastic_x_update, x_update
+from utils.sadmm_updates import z_update, u_update, stochastic_x_update
 from utils.sadmm_utils import get_value, calculate_accuracy
 import time as t
 

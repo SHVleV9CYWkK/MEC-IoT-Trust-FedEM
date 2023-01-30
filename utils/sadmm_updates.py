@@ -14,13 +14,27 @@ def eval_gradient(a_prev, x_i, y_i, gamma):
 
 
 def eval_gradient_sadmm(a_prev, x_i, y_i):
-    y_pred = np.array(np.dot(a_prev, x_i.T))
-    if (y_i * y_pred).any() >= 1:
-        return 0
+    y_pred = np.dot(a_prev, x_i.T)
+    if y_i * y_pred < 1:
+        return -y_i * x_i
     else:
-        y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], )
-        return -np.sum(y_i * np.log(y_pred + 1e-3))
+        return 0
 
+    # if y_i * np.dot(a_prev, x_i.T) >= 1:
+    #     grad = 0
+    # else:
+    #     grad = (-1) * (y_i * x_i).T
+    #
+    # return grad
+
+    # y_pred = np.dot(a_prev, x_i.T)
+    # temp = y_i * y_pred
+    # if temp <= 0:
+    #     return 0.5 - temp
+    # elif 0 < temp <= 1:
+    #     return 0.5 * ((1 - temp) ** 2)
+    # else:
+    #     return 0
 
 
 def stochastic_x_update(data):
@@ -35,7 +49,7 @@ def stochastic_x_update(data):
     df = pd.DataFrame(np.concatenate((X, y.reshape(len(y), 1)), axis=1))
     dim_X = df.shape
 
-    sample_size = 5
+    sample_size = 1
     sample = df.sample(sample_size, replace=True)
     y_idx = sample.shape[1] - 1
     X = np.array(sample.drop(columns=[y_idx]))
@@ -46,13 +60,13 @@ def stochastic_x_update(data):
     gamma = 0.1
     grad = eval_gradient_sadmm(a_prev.T, X, y)
     # time-varying loss function
-    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev, a))) + ((square(norm(a - a_prev))) / (2 * mu))
+    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev.T, a))) + ((square(norm(a.T - a_prev))) / (2 * mu))
     f = 0
     for id in range(int(len(neighbour_data) / 2)):
         z = np.asmatrix(neighbour_data[id * 2]).T
         u = np.asmatrix(neighbour_data[id * 2 + 1]).T
         f = f + rho / 2 * square(norm(a - z + u))
-    objective = Minimize(50 * g + 50 * f)
+    objective = Minimize(0.01 * g + 0.01 * f)
     p = Problem(objective)
     try:
         result = p.solve()
@@ -89,47 +103,47 @@ def stochastic_x_update(data):
     return a.value
 
 
-def x_update(data):
-    rho = data[1]
-    c = data[2]
-    dataset = data[3]
-    neighbour_data = data[4]
-
-    X, y = dataset
-    dim_X = X.shape
-    num_examples = dim_X[0]
-    num_features = dim_X[1]
-
-    a = Variable((num_features, 1))
-    epsil = Variable((num_examples, 1))
-    constraints = [epsil >= 0]
-    g = c * norm(epsil, 1)
-    for i in range(num_features - 1):
-        g = g + 0.5 * square(a[i])
-    for i in range(num_examples):
-        constraints = constraints + [y[i] * (sum(multiply(np.asmatrix(X[i]).T, a))) >= 1 - epsil[i]]
-    f = 0
-    for id in range(int(len(neighbour_data) / 2)):
-        z = np.asmatrix(neighbour_data[id * 2]).T
-        u = np.asmatrix(neighbour_data[id * 2 + 1]).T
-        f = f + rho / 2 * square(norm(a - z + u))
-    objective = Minimize(50 * g + 50 * f)
-    p = Problem(objective, constraints)
-    try:
-        result = p.solve(solver=ECOS)
-        if result is None:
-            objective = Minimize(50 * g + 51 * f)
-            p = Problem(objective, constraints)
-            result = p.solve(verbose=False)
-            if result is None:
-                print("SCALING BUG")  # CVXOPT scaling issue (rarely occurs)
-                objective = Minimize(52 * g + 50 * f)
-                p = Problem(objective, constraints)
-                p.solve(verbose=False)
-    except SolverError as e:
-        print(e)
-
-    return a.value
+# def x_update(data):
+#     rho = data[1]
+#     c = data[2]
+#     dataset = data[3]
+#     neighbour_data = data[4]
+#
+#     X, y = dataset
+#     dim_X = X.shape
+#     num_examples = dim_X[0]
+#     num_features = dim_X[1]
+#
+#     a = Variable((num_features, 1))
+#     epsil = Variable((num_examples, 1))
+#     constraints = [epsil >= 0]
+#     g = c * norm(epsil, 1)
+#     for i in range(num_features - 1):
+#         g = g + 0.5 * square(a[i])
+#     for i in range(num_examples):
+#         constraints = constraints + [y[i] * (sum(multiply(np.asmatrix(X[i]).T, a))) >= 1 - epsil[i]]
+#     f = 0
+#     for id in range(int(len(neighbour_data) / 2)):
+#         z = np.asmatrix(neighbour_data[id * 2]).T
+#         u = np.asmatrix(neighbour_data[id * 2 + 1]).T
+#         f = f + rho / 2 * square(norm(a - z + u))
+#     objective = Minimize(50 * g + 50 * f)
+#     p = Problem(objective, constraints)
+#     try:
+#         result = p.solve(solver=ECOS)
+#         if result is None:
+#             objective = Minimize(50 * g + 51 * f)
+#             p = Problem(objective, constraints)
+#             result = p.solve(verbose=False)
+#             if result is None:
+#                 print("SCALING BUG")  # CVXOPT scaling issue (rarely occurs)
+#                 objective = Minimize(52 * g + 50 * f)
+#                 p = Problem(objective, constraints)
+#                 p.solve(verbose=False)
+#     except SolverError as e:
+#         print(e)
+#
+#     return a.value
 
 
 def z_update(data):
