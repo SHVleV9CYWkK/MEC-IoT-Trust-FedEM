@@ -162,7 +162,7 @@ def run_sadmm_experiment(args):
         logs_dir = args.logs_dir
     else:
         logs_dir = os.path.join("logs", args_to_string(args))
-    logs_path = os.path.join(logs_dir, "test", "global")
+    logs_path = os.path.join(logs_dir, "train", "global")
     logger = SummaryWriter(logs_path)
     runner.run(args, num_features, datasets, datasets_test, c, logger)
 

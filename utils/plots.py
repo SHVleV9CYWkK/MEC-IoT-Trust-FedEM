@@ -30,7 +30,7 @@ LEGEND = {
 }
 
 MARKERS = {
-    "S-ADMM": "x",
+    "sadmm": "x",
     "FedAvg": "h",
     "FedEM": "d",
 }
