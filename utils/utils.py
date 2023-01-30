@@ -1,3 +1,4 @@
+from datasets import *
 from learners.learner import *
 from learners.learners_ensemble import *
 from client import *
@@ -6,13 +7,11 @@ from models import *
 
 from .optim import *
 from .metrics import *
-
 from torch.utils.data import DataLoader
 
 from tqdm import tqdm
 
 from .plots import HIDDEN_NEURON_NUM
-from datasets import *
 
 
 def get_data_dir(experiment_name):

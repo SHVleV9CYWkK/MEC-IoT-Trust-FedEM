@@ -4,7 +4,7 @@ from utils.sadmm_utils import get_local_data
 from utils.plots import make_plot, INPUT_DIM
 from utils.constants import *
 from utils.args import *
-# from datasets import get_dataset
+from datasets import get_dataset
 
 from torch.utils.tensorboard import SummaryWriter
 
