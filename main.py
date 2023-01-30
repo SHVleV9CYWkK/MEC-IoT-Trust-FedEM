@@ -2,13 +2,12 @@ import time
 
 import networkx as nx
 
+from utils.utils import *
 from sadmm_solver import NetworkLassoRunner
 from utils.sadmm_utils import get_local_data
 from utils.plots import make_plot, INPUT_DIM
-from utils.utils import *
 from utils.constants import *
 from utils.args import *
-from datasets import *
 
 from torch.utils.tensorboard import SummaryWriter
 
