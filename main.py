@@ -148,7 +148,7 @@ def run_experiment(args_):
         aggregator.save_state(save_dir)
 
 
-def run_admm_experiment(args):
+def run_sadmm_experiment(args):
     c = 0.75
     num_features = INPUT_DIM[args.experiment]
 
@@ -160,8 +160,13 @@ def run_admm_experiment(args):
     for node_id in range(100):
         datasets[node_id] = get_local_data(node_id, args.experiment, inputs, targets)
         datasets_test[node_id] = get_local_data(node_id, args.experiment, inputs, targets, True)
-    w, accuracies = runner.run(num_features, args.n_rounds, datasets, datasets_test, c)
-    return w, accuracies
+    if "logs_dir" in args:
+        logs_dir = args.logs_dir
+    else:
+        logs_dir = os.path.join("logs", args_to_string(args))
+    logs_path = os.path.join(logs_dir, "test", "global")
+    logger = SummaryWriter(logs_path)
+    runner.run(args, num_features, datasets, datasets_test, c, logger)
 
 
 def build_graph(num_nodes):
@@ -215,16 +220,16 @@ def build_graph(num_nodes):
 
 if __name__ == "__main__":
     args = parse_args()
+    path = os.getcwd() + '//' + time.strftime("%H%M-%d%m%Y", time.localtime())
+    if not os.path.exists(path):
+        os.makedirs(path)
     if args.method != "sadmm":
         run_experiment(args)
-        path = os.getcwd() + '\\' + time.strftime("%H%M-%d%m%Y", time.localtime())
-        if not os.path.exists(path):
-            os.makedirs(path)
         make_plot("./logs/" + args.experiment, "Train/Metric", path)
         make_plot("./logs/" + args.experiment, "Train/Loss", path)
         make_plot("./logs/" + args.experiment, "Test/Loss", path)
         make_plot("./logs/" + args.experiment, "Test/Metric", path)
     else:
-        result = run_admm_experiment(args)
-        print(result)
+        run_sadmm_experiment(args)
+        make_plot("./logs/" + args.experiment, "Test/Metric", path)
     print("Experiment Complete")

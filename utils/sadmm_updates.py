@@ -16,7 +16,7 @@ def eval_gradient(a_prev, x_i, y_i, gamma):
 def eval_gradient_sadmm(a_prev, x_i, y_i):
     y_pred = np.dot(a_prev, x_i.T)
     if y_i * y_pred < 1:
-        return -y_i * x_i
+        return (-y_i * x_i).T
     else:
         return 0
 
@@ -26,15 +26,6 @@ def eval_gradient_sadmm(a_prev, x_i, y_i):
     #     grad = (-1) * (y_i * x_i).T
     #
     # return grad
-
-    # y_pred = np.dot(a_prev, x_i.T)
-    # temp = y_i * y_pred
-    # if temp <= 0:
-    #     return 0.5 - temp
-    # elif 0 < temp <= 1:
-    #     return 0.5 * ((1 - temp) ** 2)
-    # else:
-    #     return 0
 
 
 def stochastic_x_update(data):
@@ -60,13 +51,13 @@ def stochastic_x_update(data):
     gamma = 0.1
     grad = eval_gradient_sadmm(a_prev.T, X, y)
     # time-varying loss function
-    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev.T, a))) + ((square(norm(a.T - a_prev))) / (2 * mu))
+    g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev, a))) + ((square(norm(a - a_prev))) / (2 * mu))
     f = 0
     for id in range(int(len(neighbour_data) / 2)):
         z = np.asmatrix(neighbour_data[id * 2]).T
         u = np.asmatrix(neighbour_data[id * 2 + 1]).T
         f = f + rho / 2 * square(norm(a - z + u))
-    objective = Minimize(0.01 * g + 0.01 * f)
+    objective = Minimize(50 * g + 50 * f)
     p = Problem(objective)
     try:
         result = p.solve()

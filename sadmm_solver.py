@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from multiprocessing import Pool, cpu_count
 import math
@@ -13,7 +15,7 @@ class NetworkLassoRunner:
         self.G = G
 
     def run_sadmm(self, lamb, rho, c, max_iterations, num_features, datasets, datasets_test, x, z, u, z_residuals,
-                  u_residuals):
+                  u_residuals, logger):
         pool = Pool(cpu_count() - 1)
 
         num_edges = len(self.G.edges)
@@ -100,27 +102,21 @@ class NetworkLassoRunner:
             print("Time Iteration: " + str(elapsed_iterations) + ", Time: " + str(t.time() - start_time))
             print("r: " + str(r) + ", epri: " + str(epri) + " | s: " + str(s) + ", edual: " + str(edual))
 
-            calculate_accuracy(x, num_nodes, datasets_test, elapsed_iterations)
+            calculate_accuracy(x, num_nodes, datasets_test, logger, elapsed_iterations)
             elapsed_iterations += 1
         pool.close()
         pool.join()
-        calculate_accuracy(x, num_nodes, datasets_test, elapsed_iterations)
+        calculate_accuracy(x, num_nodes, datasets_test)
         return x, z, u, z_residuals, u_residuals, elapsed_iterations
 
-    def run(self, num_features, max_iterations, datasets, datasets_test, c):
+    def run(self, args, num_features, datasets, datasets_test, c, logger):
         print("Running Stochastic Network Lasso...")
 
-        lamb = 0.0
         rho = 1.0
-        startVal = 0.001
-        useMult = 1  # 1 for mult, 0 for add
-        addUpdateVal = 0.1
-        multUpdateVal = 1.2
 
         num_nodes = len(self.G.nodes)
         num_edges = len(self.G.edges)
 
-        threshold = 10
         x = np.zeros((num_features, num_nodes))
         z = {}
         u = {}
@@ -134,21 +130,8 @@ class NetworkLassoRunner:
             u[edge] = (np.zeros((1, num_features)), np.zeros((1, num_features)))
             counter += 1
 
-        accuracies = list()
-        while lamb <= threshold:
-            print("Lambda: " + str(lamb) + ", Rho: " + str(rho))
-            x, z, u, z_residuals, u_residuals, iters = self.run_sadmm(lamb, rho, c, max_iterations, num_features,
+        x, z, u, z_residuals, u_residuals, iters = self.run_sadmm(args.sadmm_lambda, rho, c, args.n_rounds, num_features,
                                                                       datasets, datasets_test, x, z, u, z_residuals,
-                                                                      u_residuals)
+                                                                      u_residuals, logger)
 
-            lamb += 0.1
-            rho += math.sqrt(lamb)
-            if lamb == 0:
-                lamb = startVal
-            elif useMult == 1:
-                lamb = lamb * multUpdateVal
-            else:
-                lamb = lamb + addUpdateVal
-            acc = calculate_accuracy(x, num_nodes, datasets_test)
-            accuracies.append(acc)
-        return x, accuracies
+        return calculate_accuracy(x, num_nodes, datasets_test)

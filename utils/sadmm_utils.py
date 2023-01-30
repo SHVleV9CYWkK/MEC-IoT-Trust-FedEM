@@ -29,7 +29,7 @@ def calculate_consensus(z, edges):
     return cons / float(num_edges)
 
 
-def calculate_accuracy(x, num_nodes, datasets_test, iterate_num=None):
+def calculate_accuracy(x, num_nodes, datasets_test, logger=None, iterate_num=None):
     total_correct_preds = 0
     num_total_test_samples = 0
 
@@ -41,17 +41,17 @@ def calculate_accuracy(x, num_nodes, datasets_test, iterate_num=None):
         a = np.array(x[:, node_id])
         a = a.reshape(1, a.shape[0])
         y_pred = np.sign(np.dot(X_test, a.T)).flatten()
-
-        correct_preds = int(np.sum(np.abs(y_pred - y_test)) / 2)
+        correct_preds = int(np.sum(np.abs(y_pred + y_test)) / 2)
         total_correct_preds += correct_preds
 
-    if iterate_num is None:
+    if iterate_num is None and logger is None:
         global_correct_preds = total_correct_preds / float(num_total_test_samples)
         print("Global Accuracy: " + str(global_correct_preds))
         return global_correct_preds
     else:
-        print("Iteration: " + str(iterate_num) + ", Accuracy: " +
-              str(total_correct_preds / float(num_total_test_samples)))
+        global_acc = total_correct_preds / float(num_total_test_samples)
+        print("Iteration: " + str(iterate_num) + ", Accuracy: " + str(global_acc))
+        logger.add_scalar("Test/Metric", global_acc, iterate_num)
 
 
 def get_local_data(node_id, dataset_name, inputs, targets, is_test=False):
