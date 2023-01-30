@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 from multiprocessing import Pool, cpu_count
 import math

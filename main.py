@@ -1,15 +1,14 @@
-import time
-
-import networkx as nx
-
-from utils.utils import *
 from sadmm_solver import NetworkLassoRunner
+from utils.utils import *
 from utils.sadmm_utils import get_local_data
 from utils.plots import make_plot, INPUT_DIM
 from utils.constants import *
 from utils.args import *
+# from datasets import get_dataset
 
 from torch.utils.tensorboard import SummaryWriter
+
+import networkx as nx
 
 
 def init_clients(args_, root_path, logs_dir):

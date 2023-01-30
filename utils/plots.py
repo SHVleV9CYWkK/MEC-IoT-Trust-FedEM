@@ -24,35 +24,21 @@ AXE_LABELS = {
 }
 
 LEGEND = {
-    "local": "Local",
-    "clustered": "Clustered FL",
+    "sadmm": "S-ADMM",
     "FedAvg": "FedAvg",
-    "FedEM": "FedEM (Ours)",
-    "FedAvg_adapt": "FedAvg+",
-    "personalized": "pFedMe",
-    "FedProx": "FedProx"
+    "FedEM": "FedEM",
 }
 
 MARKERS = {
-    "local": "x",
-    "clustered": "s",
+    "S-ADMM": "x",
     "FedAvg": "h",
     "FedEM": "d",
-    "FedAvg_adapt": "4",
-    "personalized": "X",
-    "DEM": "|",
-    "FedProx": "p"
 }
 
 COLORS = {
-    "local": "tab:blue",
-    "clustered": "tab:orange",
+    "sadmm": "tab:blue",
     "FedAvg": "tab:green",
     "FedEM": "tab:red",
-    "FedAvg_adapt": "tab:purple",
-    "personalized": "tab:brown",
-    "DEM": "tab:pink",
-    "FedProx": "tab:cyan"
 }
 
 HIDDEN_NEURON_NUM = {
