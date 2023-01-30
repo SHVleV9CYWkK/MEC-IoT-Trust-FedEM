@@ -215,7 +215,7 @@ def build_graph(num_nodes):
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.method != "admm":
+    if args.method != "sadmm":
         run_experiment(args)
     else:
         reulst = run_admm_experiment(args)
