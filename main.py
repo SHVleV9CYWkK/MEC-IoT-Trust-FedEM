@@ -131,7 +131,7 @@ def run_experiment(args_):
     print("Training..")
     pbar = tqdm(total=args_.n_rounds)
     current_round = 0
-    while current_round <= args_.n_rounds:
+    while current_round < args_.n_rounds:
 
         aggregator.mix()
 

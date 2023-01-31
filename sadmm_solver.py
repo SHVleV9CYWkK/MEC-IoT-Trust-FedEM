@@ -30,6 +30,7 @@ class NetworkLassoRunner:
             counter += 1
 
         elapsed_iterations = 0
+        calculate_accuracy(x, num_nodes, datasets_test, logger, elapsed_iterations)
         while elapsed_iterations < max_iterations and (r > epri or s > edual or elapsed_iterations < 1):
             start_time = t.time()
             mu = 1 / float(elapsed_iterations + 1)
@@ -97,11 +98,11 @@ class NetworkLassoRunner:
             edual = sqn * eabs + erel * LA.norm(np.dot(A.transpose(), u_residuals.transpose()), 'fro')
             r = LA.norm(np.dot(A, x.transpose()) - z_residuals.transpose(), 'fro')
             s = s
+            elapsed_iterations += 1
             print("Time Iteration: " + str(elapsed_iterations) + ", Time: " + str(t.time() - start_time))
             print("r: " + str(r) + ", epri: " + str(epri) + " | s: " + str(s) + ", edual: " + str(edual))
-
             calculate_accuracy(x, num_nodes, datasets_test, logger, elapsed_iterations)
-            elapsed_iterations += 1
+
         pool.close()
         pool.join()
         calculate_accuracy(x, num_nodes, datasets_test)
