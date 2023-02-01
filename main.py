@@ -1,3 +1,5 @@
+import time
+
 from sadmm_solver import NetworkLassoRunner
 from utils.utils import *
 from utils.sadmm_utils import get_local_data
@@ -131,19 +133,30 @@ def run_experiment(args_):
     print("Training..")
     pbar = tqdm(total=args_.n_rounds)
     current_round = 0
+    limit_max_acc = float(args_.max_accuracy)
+    max_acc = [0] * 3
+    start_time = time.time()
     while current_round < args_.n_rounds:
-
-        aggregator.mix()
+        acc, round = aggregator.mix()
+        if acc > max_acc[0]:
+            max_acc[0] = acc
+            max_acc[1] = round
+            max_acc[2] = time.time() - start_time
 
         if aggregator.c_round != current_round:
             pbar.update(1)
             current_round = aggregator.c_round
+
+        if 0 < limit_max_acc <= acc:
+            break
 
     if "save_dir" in args_:
         save_dir = os.path.join(args_.save_dir)
 
         os.makedirs(save_dir, exist_ok=True)
         aggregator.save_state(save_dir)
+
+    return max_acc
 
 
 def run_sadmm_experiment(args):
@@ -222,7 +235,12 @@ if __name__ == "__main__":
     if not os.path.exists(path):
         os.makedirs(path)
     if args.method != "sadmm":
-        run_experiment(args)
+        max_acc = run_experiment(args)
+        if args.max_accuracy == 0:
+            print(f"Training reaches a maximum accuracy of {int(max_acc[0] * 100)}% in {max_acc[1]} rounds and spent {max_acc[2]}s.")
+        else:
+            print(f"{int(float(args.max_accuracy) * 100)}% accuracy to target. It takes {max_acc[2]}s to reach the "
+                  f"maximum accuracy of {int(max_acc[0] * 100)}% in the {max_acc[1]} round.")
         make_plot("./logs/" + args.experiment, "Train/Metric", path)
         make_plot("./logs/" + args.experiment, "Train/Loss", path)
         make_plot("./logs/" + args.experiment, "Test/Loss", path)

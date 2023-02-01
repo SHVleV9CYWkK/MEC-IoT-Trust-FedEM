@@ -141,12 +141,6 @@ def parse_args(args_list=None):
         default=0
     )
     parser.add_argument(
-        "--communication_probability",
-        help='communication probability, only used with L2SGD',
-        type=float,
-        default=0.1
-    )
-    parser.add_argument(
         "--q",
         help='fairness hyper-parameter, ony used for FFL client; default is 1.',
         type=float,
@@ -178,6 +172,11 @@ def parse_args(args_list=None):
         "--save_dir",
         help='directory to save checkpoints once the training is over; if not specified checkpoints are not saved',
         default=argparse.SUPPRESS
+    )
+    parser.add_argument(
+        "--max_accuracy",
+        help='Maximum accuracy limit, for comparing performance',
+        default=0
     )
     parser.add_argument(
         "--seed",

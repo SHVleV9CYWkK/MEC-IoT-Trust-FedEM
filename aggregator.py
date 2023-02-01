@@ -4,6 +4,7 @@ import random
 
 from abc import ABC, abstractmethod
 import numpy as np
+from decimal import Decimal
 
 from utils.torch_utils import *
 
@@ -192,6 +193,8 @@ class Aggregator(ABC):
             global_logger.add_scalar("Test/Loss", global_test_loss, self.c_round)
             global_logger.add_scalar("Test/Metric", global_test_acc, self.c_round)
 
+            return Decimal(global_test_acc).quantize(Decimal("0.00")), self.c_round
+
         if self.verbose > 0:
             print("#" * 80)
 
@@ -302,7 +305,7 @@ class CentralizedAggregator(Aggregator):
         self.c_round += 1
 
         if self.c_round % self.log_freq == 0:
-            self.write_logs()
+            return self.write_logs()
 
     def update_clients(self):
         for client in self.clients:
