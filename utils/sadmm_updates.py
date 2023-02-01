@@ -13,19 +13,13 @@ def eval_gradient(a_prev, x_i, y_i, gamma):
     return grad
 
 
-def eval_gradient_sadmm(a_prev, x_i, y_i):
+def hinge_loss(a_prev, x_i, y_i):
     y_pred = np.dot(a_prev, x_i.T)
     if y_i * y_pred < 1:
         return (-y_i * x_i).T
     else:
         return 0
 
-    # if y_i * np.dot(a_prev, x_i.T) >= 1:
-    #     grad = 0
-    # else:
-    #     grad = (-1) * (y_i * x_i).T
-    #
-    # return grad
 
 
 def stochastic_x_update(data):
@@ -49,7 +43,7 @@ def stochastic_x_update(data):
     n = dim_X[1] - 1
     a = Variable((n, 1))
     gamma = 0.1
-    grad = eval_gradient_sadmm(a_prev.T, X, y)
+    grad = hinge_loss(a_prev.T, X, y)
     # time-varying loss function
     g = sum(multiply(np.asmatrix(grad), a)) + gamma * (sum(multiply(a_prev, a))) + ((square(norm(a - a_prev))) / (2 * mu))
     f = 0
