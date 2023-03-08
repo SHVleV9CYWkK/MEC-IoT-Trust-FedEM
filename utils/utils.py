@@ -263,7 +263,8 @@ def get_aggregator(
         global_test_logger,
         test_clients,
         verbose,
-        seed=None
+        config=None,
+        seed=None,
 ):
     """
     `personalized` corresponds to pFedMe
@@ -301,6 +302,31 @@ def get_aggregator(
         )
     elif aggregator_type == "centralized":
         return CentralizedAggregator(
+            clients=clients,
+            global_learners_ensemble=global_learners_ensemble,
+            log_freq=log_freq,
+            global_train_logger=global_train_logger,
+            global_test_logger=global_test_logger,
+            test_clients=test_clients,
+            sampling_rate=sampling_rate,
+            verbose=verbose,
+            seed=seed
+        )
+    elif aggregator_type == "centralizedWithDQN":
+        return CentralizedAggregatorWithDQN(
+            clients=clients,
+            global_learners_ensemble=global_learners_ensemble,
+            log_freq=log_freq,
+            global_train_logger=global_train_logger,
+            global_test_logger=global_test_logger,
+            test_clients=test_clients,
+            sampling_rate=sampling_rate,
+            verbose=verbose,
+            seed=seed
+        )
+    elif aggregator_type == "trainDQN":
+        return DQNTrainServer(
+            config=config,
             clients=clients,
             global_learners_ensemble=global_learners_ensemble,
             log_freq=log_freq,

@@ -136,6 +136,8 @@ def run_experiment(args_):
     limit_max_acc = float(args_.max_accuracy)
     max_acc = [0] * 3
     start_time = time.time()
+    if args_.client_selection:
+        aggregator.profile_all_clients()
     while current_round < args_.n_rounds:
         acc, round = aggregator.mix()
         if acc > max_acc[0]:

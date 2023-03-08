@@ -49,6 +49,18 @@ def parse_args(args_list=None):
         action='store_true'
     )
     parser.add_argument(
+        '--client_selection',
+        help='if chosen decentralized version is used,'
+             'client are connected via an erdos-renyi graph of parameter p=0.5,'
+             'the mixing matrix is obtained via FMMC (Fast Mixin Markov Chain),'
+             'see https://web.stanford.edu/~boyd/papers/pdf/fmmc.pdf);'
+             'can be combined with `method=FedEM`, in that case it is equivalent to `D-EM`;'
+             'can not be used when method is `AFL` or `FFL`, in that case a warning is raised'
+             'and decentralized is set to `False`;'
+             'in all other cases D-SGD is used;',
+        action='store_true'
+    )
+    parser.add_argument(
         '--sampling_rate',
         help='proportion of clients to be used at each round; default is 1.0',
         type=float,
@@ -183,6 +195,103 @@ def parse_args(args_list=None):
         help='random seed',
         type=int,
         default=1234
+    )
+
+    parser.add_argument(
+        '--memory_size',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=200
+    )
+    parser.add_argument(
+        '--episode',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=200
+    )
+    parser.add_argument(
+        '--max_steps',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=50
+    )
+    parser.add_argument(
+        '--target_update',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=10
+    )
+    parser.add_argument(
+        '--batch_size',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=4
+    )
+    parser.add_argument(
+        '--gamma',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=0.95
+    )
+    parser.add_argument(
+        '--learning_rate',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=int,
+        default=0.0001
+    )
+    parser.add_argument(
+        '--rewards_log',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=str,
+        default="output/dqn_model_rewards.csv"
+    )
+    parser.add_argument(
+        '--epsilon_initial',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=1.0
+    )
+    parser.add_argument(
+        '--epsilon_decay',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=0.95
+    )
+    parser.add_argument(
+        '--epsilon_min',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=0.01
+    )
+    parser.add_argument(
+        '--saved_model',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=str,
+        default="output/dqn_models/dqn_2-10_model"
+    )
+    parser.add_argument(
+        '--target_accuracy',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=0.99
+    )
+    parser.add_argument(
+        '--reward_xi',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=float,
+        default=64
+    )
+    parser.add_argument(
+        '--reward_fun',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=str,
+        default="target"
+    )
+    parser.add_argument(
+        '--paths_model',
+        # help='the dimension of one input sample; only used for synthetic dataset',
+        type=str,
+        default="./models"
     )
 
     if args_list:
