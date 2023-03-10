@@ -27,12 +27,14 @@ LEGEND = {
     "sadmm": "S-ADMM",
     "FedAvg": "FedAvg",
     "FedEM": "FedEM",
+    "FedEM_withDQN": "FedEM_withDQN"
 }
 
 MARKERS = {
     "sadmm": "x",
     "FedAvg": "h",
     "FedEM": "d",
+    "FedEM_withDQN": "4"
 }
 
 COLORS = {

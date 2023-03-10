@@ -145,7 +145,7 @@ class Aggregator(ABC):
             client.update_sample_weights()
             client.update_learners_weights()
 
-    def write_logs(self, display=True):
+    def write_logs(self, record=True, display=True):
         self.update_test_clients()
 
         for global_logger, clients in [
@@ -196,11 +196,11 @@ class Aggregator(ABC):
                 print(f"Train Loss: {global_train_loss:.3f} | Train Acc: {global_train_acc * 100:.3f}% |", end="")
                 print(f"Test Loss: {global_test_loss:.3f} | Test Acc: {global_test_acc * 100:.3f}% |")
                 print("+" * 50)
-
-            global_logger.add_scalar("Train/Loss", global_train_loss, self.c_round)
-            global_logger.add_scalar("Train/Metric", global_train_acc, self.c_round)
-            global_logger.add_scalar("Test/Loss", global_test_loss, self.c_round)
-            global_logger.add_scalar("Test/Metric", global_test_acc, self.c_round)
+            if record:
+                global_logger.add_scalar("Train/Loss", global_train_loss, self.c_round)
+                global_logger.add_scalar("Train/Metric", global_train_acc, self.c_round)
+                global_logger.add_scalar("Test/Loss", global_test_loss, self.c_round)
+                global_logger.add_scalar("Test/Metric", global_test_acc, self.c_round)
 
             return Decimal(global_test_acc).quantize(Decimal("0.00")), self.c_round
 
@@ -344,13 +344,14 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
                          global_test_logger,
                          *args,
                          **kwargs)
+        self.pca_weights_clientserver_init = None
         self.pca = None
         self.pca_weights_clientserver = None
 
     def sample_clients(self):
         # Select devices to participate in current round
         clients_per_round = self.n_clients_per_round
-        print('self.pca_weights_clientserver.shape:', self.pca_weights_clientserver.shape)
+        # print('self.pca_weights_clientserver.shape:', self.pca_weights_clientserver.shape)
 
         # calculate state using the pca model transformed weights
         state = self.pca_weights_clientserver.flatten()
@@ -358,7 +359,7 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
 
         # use dqn model to select top k devices
         q_values = self.dqn_model.predict([state])[0]
-        print("q_values: ", q_values)
+        # print("q_values: ", q_values)
 
         # select top k index based on the q_values
         top_k_index = np.argsort(q_values)[-clients_per_round:]
@@ -386,17 +387,21 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
         for client in self.clients:
             client.step()
 
-        clients_weights_pca = self.pca.transform(np.array([self.flatten_weights(self.clients_weights)]))
+        weights = [self.flatten_weights(client.learners_ensemble.learners[0].model.parameters())
+                   for client in self.clients]
+
+        clients_weights_pca = self.pca.transform(weights)
 
         for learner_id, learner in enumerate(self.global_learners_ensemble):
             learners = [client.learners_ensemble[learner_id] for client in self.clients]
             average_learners(learners, learner, weights=self.clients_weights)
 
         self.update_clients()
-        server_weights_pca = self.pca.transform(np.array([self.flatten_weights(self.global_learners_ensemble[0].model)]))
+        global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1, -1)
+        global_weights_pca = self.pca.transform(global_weights)
 
         # save the initial pca weights for each client + server
-        self.pca_weights_clientserver_init = np.vstack((clients_weights_pca, server_weights_pca))
+        self.pca_weights_clientserver_init = np.vstack((clients_weights_pca, global_weights_pca))
         print("shape of self.pca_weights_clientserver_init: ", self.pca_weights_clientserver_init.shape)
 
         # save a copy for later update in DQN training episodes
@@ -404,10 +409,10 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
 
         print('self.pca_weights_clientserver.shape:', self.pca_weights_clientserver.shape)
 
-    def flatten_weights(weights):
+    def flatten_weights(self, weights):
         # Flatten weights into vectors
         weight_vecs = []
-        for _, weight in weights:
+        for weight in weights:
             weight_vecs.extend(weight.flatten().tolist())
         return np.array(weight_vecs)
 
@@ -541,7 +546,7 @@ class DQNTrainServer(CentralizedAggregator):
         global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1, -1)
         server_weights_pca = self.pca.transform(global_weights)
 
-        accuracy = self.write_logs()
+        accuracy = self.write_logs(record=False)
         # update the weights of the selected devices and server to corresponding client id
         # return next_state
         for i in range(len(sample_clients_ids)):
@@ -704,7 +709,8 @@ class DQNTrainServer(CentralizedAggregator):
         for client in self.clients:
             client.step()
         # parameters = client.learners_ensemble.learners[0].model.parameters()
-        weights = [self.flatten_weights(client.learners_ensemble.learners[0].model.parameters()) for client in self.clients]
+        weights = [self.flatten_weights(client.learners_ensemble.learners[0].model.parameters())
+                   for client in self.clients]
 
         t_start = time.time()
         print("Start building the PCA transformer...")
@@ -713,7 +719,7 @@ class DQNTrainServer(CentralizedAggregator):
         clients_weights_pca = self.pca.fit_transform(weights)
 
         # dump clients_weights_pca out to pkl file for plotting
-        clients_weights_pca_fn = 'output/clients_weights_pca.pkl'
+        clients_weights_pca_fn = "output/" + self.config.experiment + "clients_weights_pca.pkl"
         pk.dump(clients_weights_pca, open(clients_weights_pca_fn, "wb"))
         print("clients_weights_pca dumped to", clients_weights_pca_fn)
 
@@ -725,7 +731,7 @@ class DQNTrainServer(CentralizedAggregator):
         print("Built PCA transformer, time: {:.2f} s".format(time.time() - t_start))
 
         # save pca model out to pickl file
-        pca_model_fn = "./model/pca_model.pkl"
+        pca_model_fn = "./model/"+self.config.experiment+"pca_model.pkl"
         pk.dump(self.pca, open(pca_model_fn, "wb"))
         print("PCA model dumped to", pca_model_fn)
 
@@ -734,33 +740,14 @@ class DQNTrainServer(CentralizedAggregator):
             average_learners(learners, learner, weights=self.clients_weights)
 
         self.update_clients()
-        global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1,-1)
+        global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1, -1)
         server_weights_pca = self.pca.transform(global_weights)
 
         print("shape of server_weights_pca: ", server_weights_pca.shape)
 
         return clients_weights_pca, server_weights_pca
 
-    """
-    def getPCAWeight(self,weight):
-        weight_flatten_array = self.flatten_weights(weight)
-       ## demision = int(math.sqrt(weight_flatten_array.size))
-        # weight_flatten_array = np.abs(weight_flatten_array)
-        # sorted_array = np.sort(weight_flatten_array)
-        # reverse_array = sorted_array[::-1]
 
-        demision = weight_flatten_array.size
-        weight_flatten_matrix = np.reshape(weight_flatten_array,(10,int(demision/10)))
-
-        pca = PCA(n_components=10)
-        pca.fit_transform(weight_flatten_matrix)
-        newWeight = pca.transform(weight_flatten_matrix)
-        # newWeight = reverse_array[0:100]
-
-        return  newWeight
-    """
-
-    # Server operations
     def profile_all_clients(self):
 
         # all clients send updated weights to server, the server will do FedAvg

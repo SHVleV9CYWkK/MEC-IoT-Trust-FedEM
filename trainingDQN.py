@@ -153,7 +153,7 @@ if __name__ == '__main__':
         with open(fn, 'a') as f:
             f.write('{},{},{},{}\n'.format(i_episode, total_reward, com_round, final_acc))
         # save trained model to h5 file
-        model_fn = aggregator.config.saved_model + '_' + str(i_episode) + '.h5'
+        model_fn = aggregator.config.saved_model + aggregator.config.experiment + '_' + str(i_episode) + '.h5'
         aggregator.dqn_model.save(model_fn)
         print("DQN model saved to:", model_fn)
 

@@ -114,7 +114,10 @@ def run_experiment(args_):
             mu=args_.mu
         )
 
-    aggregator_type = 'centralized'
+    if args_.client_selection:
+        aggregator_type = 'centralizedWithDQN'
+    else:
+        aggregator_type = 'centralized'
 
     aggregator = \
         get_aggregator(
@@ -137,7 +140,13 @@ def run_experiment(args_):
     max_acc = [0] * 3
     start_time = time.time()
     if args_.client_selection:
+        aggregator.load_pca("./model/" + args_.experiment + "_pca_model.pkl")
+        path_dqn_model = args_.saved_model + args_.experiment + '_4.h5'
+        if not os.path.exists(path_dqn_model):
+            path_dqn_model = args_.saved_model + args_.experiment + '_0.h5'
+        aggregator.load_dqn_model(path_dqn_model)
         aggregator.profile_all_clients()
+
     while current_round < args_.n_rounds:
         acc, round = aggregator.mix()
         if acc > max_acc[0]:

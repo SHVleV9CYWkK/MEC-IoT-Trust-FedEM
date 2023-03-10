@@ -8,14 +8,14 @@ def args_to_string(args):
     :param args:
     :return: string
     """
-    if args.decentralized:
-        return f"{args.experiment}_decentralized"
-
     args_string = ""
 
     args_to_show = ["experiment", "method"]
     for arg in args_to_show:
         args_string = os.path.join(args_string, str(getattr(args, arg)))
+
+    if args.client_selection:
+        args_string += "_withDQN"
 
     if args.locally_tune_clients:
         args_string += "_adapt"
@@ -37,27 +37,7 @@ def parse_args(args_list=None):
         type=str
     )
     parser.add_argument(
-        '--decentralized',
-        help='if chosen decentralized version is used,'
-             'client are connected via an erdos-renyi graph of parameter p=0.5,'
-             'the mixing matrix is obtained via FMMC (Fast Mixin Markov Chain),'
-             'see https://web.stanford.edu/~boyd/papers/pdf/fmmc.pdf);'
-             'can be combined with `method=FedEM`, in that case it is equivalent to `D-EM`;'
-             'can not be used when method is `AFL` or `FFL`, in that case a warning is raised'
-             'and decentralized is set to `False`;'
-             'in all other cases D-SGD is used;',
-        action='store_true'
-    )
-    parser.add_argument(
         '--client_selection',
-        help='if chosen decentralized version is used,'
-             'client are connected via an erdos-renyi graph of parameter p=0.5,'
-             'the mixing matrix is obtained via FMMC (Fast Mixin Markov Chain),'
-             'see https://web.stanford.edu/~boyd/papers/pdf/fmmc.pdf);'
-             'can be combined with `method=FedEM`, in that case it is equivalent to `D-EM`;'
-             'can not be used when method is `AFL` or `FFL`, in that case a warning is raised'
-             'and decentralized is set to `False`;'
-             'in all other cases D-SGD is used;',
         action='store_true'
     )
     parser.add_argument(
@@ -207,7 +187,7 @@ def parse_args(args_list=None):
         '--episode',
         # help='the dimension of one input sample; only used for synthetic dataset',
         type=int,
-        default=200
+        default=5
     )
     parser.add_argument(
         '--max_steps',
@@ -267,7 +247,7 @@ def parse_args(args_list=None):
         '--saved_model',
         # help='the dimension of one input sample; only used for synthetic dataset',
         type=str,
-        default="output/dqn_models/dqn_2-10_model"
+        default="output/dqn_models/"
     )
     parser.add_argument(
         '--target_accuracy',
