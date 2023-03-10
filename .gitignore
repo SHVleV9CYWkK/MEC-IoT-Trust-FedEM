@@ -7,3 +7,4 @@ all_data/
 .DS_Store
 __MACOSX
 __pycache__
+*.h5
