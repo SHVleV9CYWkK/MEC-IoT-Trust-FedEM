@@ -386,14 +386,14 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
         for client in self.clients:
             client.step()
 
-        clients_weights_pca = self.pca.transform(np.array([flatten_weights(self.clients_weights)]))
+        clients_weights_pca = self.pca.transform(np.array([self.flatten_weights(self.clients_weights)]))
 
         for learner_id, learner in enumerate(self.global_learners_ensemble):
             learners = [client.learners_ensemble[learner_id] for client in self.clients]
             average_learners(learners, learner, weights=self.clients_weights)
 
         self.update_clients()
-        server_weights_pca = self.pca.transform(np.array([flatten_weights(self.global_learners_ensemble[0].model)]))
+        server_weights_pca = self.pca.transform(np.array([self.flatten_weights(self.global_learners_ensemble[0].model)]))
 
         # save the initial pca weights for each client + server
         self.pca_weights_clientserver_init = np.vstack((clients_weights_pca, server_weights_pca))
@@ -404,17 +404,16 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
 
         print('self.pca_weights_clientserver.shape:', self.pca_weights_clientserver.shape)
 
-
-@staticmethod
-def flatten_weights(weights):
-    # Flatten weights into vectors
-    weight_vecs = []
-    for _, weight in weights:
-        weight_vecs.extend(weight.flatten().tolist())
-    return np.array(weight_vecs)
+    def flatten_weights(weights):
+        # Flatten weights into vectors
+        weight_vecs = []
+        for _, weight in weights:
+            weight_vecs.extend(weight.flatten().tolist())
+        return np.array(weight_vecs)
 
 
-class DQNTrainServer(Aggregator, ABC):
+
+class DQNTrainServer(CentralizedAggregator):
     """Federated learning server that uses Double DQN for device selection."""
 
     def __init__(self, config, clients, global_learners_ensemble, log_freq, global_train_logger,
@@ -431,11 +430,7 @@ class DQNTrainServer(Aggregator, ABC):
         self.batch_size = self.config.batch_size
         self.gamma = self.config.gamma
         # number of components to use for PCA, notice here pca_n_components should be smaller than the total number of clients!!!
-        self.pca_n_components = min(100, len(self.clients))
         self.pca = None
-
-        # self.dqn_model = self._build_model()
-        # self.target_model = self._build_model()
 
         self.dqn_model = self._build_model2()
         self.target_model = self._build_model2()
@@ -447,21 +442,21 @@ class DQNTrainServer(Aggregator, ABC):
         # self.total_steps = 0
 
     def _build_model(self):
-        layers = [128]  # hidden layers
+        layers = self.config.dqn.hidden_layers  # hidden layers
 
         # (all clients weight + server weight) * pca_n_components, flattened to 1D
-        input_size = (len(self.clients) + 1) * self.pca_n_components
+        input_size = (len(self.clients) + 1) * 3
 
         states = Input(shape=(input_size,))
         z = states
         for l in layers:
             z = Dense(l, activation='linear')(z)
 
-        q = Dense(len(self.clients), activation='linear')(
+        q = Dense(self.config.clients.total, activation='linear')(
             z)  # here use linear activation function to predict the q values for each action/client
 
         model = Model(inputs=[states], outputs=[q])
-        model.compile(optimizer=Adam(lr=self.config.learning_rate), loss=huber_loss)
+        model.compile(optimizer=Adam(lr=self.config.dqn.learning_rate), loss=huber_loss)
 
         return model
 
@@ -470,11 +465,12 @@ class DQNTrainServer(Aggregator, ABC):
         # use the 2layer MLP torch model in fl-lottery/rl/agent.py
         # https://github.com/iQua/fl-lottery/blob/360d9c2d54c12e2631ac123a4dd5ac9184d913f0/rl/agent.py
 
-        layers = [128]  # hidden layers
+        layers = [512, 512]  # hidden layers
         l1 = layers[0]
+        l2 = layers[1]
 
         # (all clients weight + server weight) * pca_n_components, flattened to 1D
-        input_size = (len(self.clients) + 1) * self.pca_n_components
+        input_size = (len(self.clients) + 1) * 3
 
         states = Input(shape=(input_size,))
 
@@ -484,7 +480,7 @@ class DQNTrainServer(Aggregator, ABC):
         q = Dense(len(self.clients), activation='linear')(z)
 
         model = Model(inputs=[states], outputs=[q])
-        model.compile(optimizer=Adam(lr=self.config.learning_rate), loss=huber_loss)
+        model.compile(optimizer=Adam(lr=self.config.dqn_learning_rate), loss=huber_loss)
 
         return model
 
@@ -520,27 +516,30 @@ class DQNTrainServer(Aggregator, ABC):
 
         # Select clients to participate in the round
         if random:
-            sample_clients = self.sample_clients()
-            print("randomly select clients:", sample_clients)
+            self.sample_clients()
+            print("randomly select clients:", self.sampled_clients)
         else:
-            sample_clients = self.dqn_selection(action)
-            print("dqn select clients:", sample_clients)
+            self.dqn_selection(action)
+            print("dqn select clients:", self.sampled_clients)
 
-        sample_clients_ids = [inx for inx, client in enumerate(sample_clients)]
+        sample_clients_ids = [inx for inx, client in enumerate(self.sampled_clients)]
 
         for client in self.clients:
             client.step()
 
+        weights = [self.flatten_weights(client.learners_ensemble.learners[0].model.parameters()) for client in
+                   self.clients]
         # client weights pca
-        clients_weights_pca = self.pca.transform(np.array([flatten_weights(self.clients_weights)]))
+        clients_weights_pca = self.pca.transform(weights)
 
         for learner_id, learner in enumerate(self.global_learners_ensemble):
             learners = [client.learners_ensemble[learner_id] for client in self.clients]
             average_learners(learners, learner, weights=self.clients_weights)
 
         self.update_clients()
-        self.save_model(self.global_learners_ensemble[0].model, "/")
-        server_weights_pca = self.pca.transform(np.array([flatten_weights(self.global_learners_ensemble[0].model)]))
+        # self.save_model(self.global_learners_ensemble[0].model, "/")
+        global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1, -1)
+        server_weights_pca = self.pca.transform(global_weights)
 
         accuracy = self.write_logs()
         # update the weights of the selected devices and server to corresponding client id
@@ -554,7 +553,7 @@ class DQNTrainServer(Aggregator, ABC):
         next_state = next_state.tolist()
 
         # testing accuracy, updated pca_weights_clientserver
-        return accuracy, next_state
+        return float(accuracy[0]), next_state
 
     def dqn_reset_state(self):
 
@@ -592,7 +591,7 @@ class DQNTrainServer(Aggregator, ABC):
     def train_episode(self, episode_ct, epsilon_current):
 
         # must reload the initial model for each episode
-        self.load_model()  # save initial global model
+        # self.load_model()  # save initial global model
 
         # reset the state at beginning of each episode, randomly select k devices to reset the states
         state = self.dqn_reset_state()  # ++ reset the state at beginning of each episode, randomly select k devices to reset the states
@@ -657,8 +656,7 @@ class DQNTrainServer(Aggregator, ABC):
     def dqn_selection(self, action):
 
         sample_clients_list = [self.clients[action]]
-
-        return sample_clients_list
+        self.sampled_clients = sample_clients_list
 
     def calculate_reward(self, accuracy_this_round):
 
@@ -702,17 +700,17 @@ class DQNTrainServer(Aggregator, ABC):
 
         return next_state, reward, done, accuracy
 
-    def profiling(self, clients, train_dqn=False):
-
-
+    def profiling(self):
         for client in self.clients:
             client.step()
+        # parameters = client.learners_ensemble.learners[0].model.parameters()
+        weights = [self.flatten_weights(client.learners_ensemble.learners[0].model.parameters()) for client in self.clients]
 
-        clients_weights_pca = self.pca.transform(np.array([flatten_weights(self.clients_weights)]))
         t_start = time.time()
         print("Start building the PCA transformer...")
         # self.pca = PCA(n_components=self.pca_n_components)
         self.pca = PCA(n_components=3)
+        clients_weights_pca = self.pca.fit_transform(weights)
 
         # dump clients_weights_pca out to pkl file for plotting
         clients_weights_pca_fn = 'output/clients_weights_pca.pkl'
@@ -727,7 +725,7 @@ class DQNTrainServer(Aggregator, ABC):
         print("Built PCA transformer, time: {:.2f} s".format(time.time() - t_start))
 
         # save pca model out to pickl file
-        pca_model_fn = "/model/pca_model.pkl"
+        pca_model_fn = "./model/pca_model.pkl"
         pk.dump(self.pca, open(pca_model_fn, "wb"))
         print("PCA model dumped to", pca_model_fn)
 
@@ -736,7 +734,8 @@ class DQNTrainServer(Aggregator, ABC):
             average_learners(learners, learner, weights=self.clients_weights)
 
         self.update_clients()
-        server_weights_pca = self.pca.transform(np.array([flatten_weights(self.global_learners_ensemble[0].model)]))
+        global_weights = self.flatten_weights(self.global_learners_ensemble[0].model.parameters()).reshape(1,-1)
+        server_weights_pca = self.pca.transform(global_weights)
 
         print("shape of server_weights_pca: ", server_weights_pca.shape)
 
@@ -762,7 +761,7 @@ class DQNTrainServer(Aggregator, ABC):
     """
 
     # Server operations
-    def profile_all_clients(self, train_dqn):
+    def profile_all_clients(self):
 
         # all clients send updated weights to server, the server will do FedAvg
         # And then run  PCA and store the transformed weights
@@ -786,10 +785,17 @@ class DQNTrainServer(Aggregator, ABC):
         torch.save(model.state_dict(), path)
         # logging.info('Saved global model: {}'.format(path))
 
-    def load_model(self):
-        model_path = self.config.paths_model
-        # Set up global model
-        self.model = DQNModule()
-        self.save_model(self.model, model_path)
-        print("Saved initial global model.")
+    # def load_model(self):
+    #     model_path = self.config.paths_model
+    #     # Set up global model
+    #     self.model = DQNModule((len(self.clients) + 1) * self.pca_n_components, len(self.clients))
+    #     self.save_model(self.model, model_path)
+    #     print("Saved initial global model.")
+
+    def flatten_weights(self, weights):
+        # Flatten weights into vectors
+        weight_vecs = []
+        for weight in weights:
+            weight_vecs.extend(weight.flatten().tolist())
+        return np.array(weight_vecs)
 

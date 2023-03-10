@@ -234,7 +234,7 @@ def parse_args(args_list=None):
         default=0.95
     )
     parser.add_argument(
-        '--learning_rate',
+        '--dqn_learning_rate',
         # help='the dimension of one input sample; only used for synthetic dataset',
         type=int,
         default=0.0001

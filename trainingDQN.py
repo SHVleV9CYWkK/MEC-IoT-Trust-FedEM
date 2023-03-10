@@ -128,11 +128,16 @@ def getTrainDQNServer(args_):
 
 if __name__ == '__main__':
     config = parse_args()
+    if not os.path.exists("./model"):
+        os.makedirs("./model", exist_ok=True)
+    if not os.path.exists("./output"):
+        os.makedirs("./output", exist_ok=True)
     fn = config.rewards_log
     print("Reards logs written to:", fn)
     with open(fn, 'w') as f:
         f.write('Episode,Reward,Round,Accuracy\n')
     aggregator = getTrainDQNServer(config)
+    aggregator.profile_all_clients()
     for i_episode in range(aggregator.episode):
         print()
         t_start = time.time()
@@ -144,7 +149,7 @@ if __name__ == '__main__':
 
         t_end = time.time()
         print("Episode: {}/{}, total_reward: {}, com_round: {}, final_acc: {:.4f}, time: {:.2f} s"
-              .format(i_episode + 1, final_acc, t_end - t_start))
+              .format(i_episode+1, aggregator.episode, total_reward, com_round, final_acc, t_end - t_start))
         with open(fn, 'a') as f:
             f.write('{},{},{},{}\n'.format(i_episode, total_reward, com_round, final_acc))
         # save trained model to h5 file
