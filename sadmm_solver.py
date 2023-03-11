@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from multiprocessing import Pool, cpu_count
 import math
@@ -14,7 +16,7 @@ class NetworkLassoRunner:
 
     def run_sadmm(self, lamb, rho, c, max_iterations, num_features, datasets, datasets_test, x, z, u, z_residuals,
                   u_residuals, logger):
-        pool = Pool(cpu_count() - 1)
+        pool = Pool(1)
 
         num_edges = len(self.G.edges)
         num_nodes = len(self.G.nodes)
@@ -31,8 +33,9 @@ class NetworkLassoRunner:
 
         elapsed_iterations = 0
         calculate_accuracy(x, num_nodes, datasets_test, logger, elapsed_iterations)
+        start_time = t.time()
         while elapsed_iterations < max_iterations and (r > epri or s > edual or elapsed_iterations < 1):
-            start_time = t.time()
+            # start_time = t.time()
             mu = 1 / float(elapsed_iterations + 1)
 
             x_data = []

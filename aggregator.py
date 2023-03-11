@@ -363,7 +363,7 @@ class CentralizedAggregatorWithDQN(CentralizedAggregator):
 
         # select top k index based on the q_values
         top_k_index = np.argsort(q_values)[-clients_per_round:]
-        print("top_k_index: ", top_k_index)
+        # print("top_k_index: ", top_k_index)
 
         self.sampled_clients = [self.clients[idx] for idx in top_k_index]
 
@@ -731,7 +731,7 @@ class DQNTrainServer(CentralizedAggregator):
         print("Built PCA transformer, time: {:.2f} s".format(time.time() - t_start))
 
         # save pca model out to pickl file
-        pca_model_fn = "./model/"+self.config.experiment+"pca_model.pkl"
+        pca_model_fn = "./model/"+self.config.experiment+"_pca_model.pkl"
         pk.dump(self.pca, open(pca_model_fn, "wb"))
         print("PCA model dumped to", pca_model_fn)
 

@@ -133,12 +133,6 @@ def run_experiment(args_):
             seed=args_.seed
         )
 
-    print("Training..")
-    pbar = tqdm(total=args_.n_rounds)
-    current_round = 0
-    limit_max_acc = float(args_.max_accuracy)
-    max_acc = [0] * 3
-    start_time = time.time()
     if args_.client_selection:
         aggregator.load_pca("./model/" + args_.experiment + "_pca_model.pkl")
         path_dqn_model = args_.saved_model + args_.experiment + '_4.h5'
@@ -147,6 +141,12 @@ def run_experiment(args_):
         aggregator.load_dqn_model(path_dqn_model)
         aggregator.profile_all_clients()
 
+    print("Training..")
+    pbar = tqdm(total=args_.n_rounds)
+    current_round = 0
+    limit_max_acc = float(args_.max_accuracy)
+    max_acc = [0] * 3
+    start_time = time.time()
     while current_round < args_.n_rounds:
         acc, round = aggregator.mix()
         if acc > max_acc[0]:

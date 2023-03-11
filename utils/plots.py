@@ -27,7 +27,7 @@ LEGEND = {
     "sadmm": "S-ADMM",
     "FedAvg": "FedAvg",
     "FedEM": "FedEM",
-    "FedEM_withDQN": "FedEM_withDQN"
+    "FedEM_withDQN": "FedEM with selection"
 }
 
 MARKERS = {
@@ -41,6 +41,7 @@ COLORS = {
     "sadmm": "tab:blue",
     "FedAvg": "tab:green",
     "FedEM": "tab:red",
+    "FedEM_withDQN": "tab:orange",
 }
 
 HIDDEN_NEURON_NUM = {
